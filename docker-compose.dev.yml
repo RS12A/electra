@@ -1,0 +1,43 @@
+# Development Docker Compose
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: electra_dev
+      POSTGRES_USER: electra_user
+      POSTGRES_PASSWORD: electra_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - electra-dev-network
+
+  # Redis for development
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - electra-dev-network
+
+  # Adminer for database management
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - electra-dev-network
+
+volumes:
+  postgres_dev_data:
+
+networks:
+  electra-dev-network:
+    driver: bridge

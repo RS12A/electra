@@ -1,0 +1,198 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  matricNumber    String   @unique @map("matric_number")
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  firstName       String   @map("first_name")
+  lastName        String    @map("last_name")
+  role            UserRole @default(STUDENT)
+  isActive        Boolean  @default(true) @map("is_active")
+  isVerified      Boolean  @default(false) @map("is_verified")
+  department      String?
+  faculty         String?
+  yearOfStudy     Int?     @map("year_of_study")
+  lastLogin       DateTime? @map("last_login")
+  biometricEnabled Boolean @default(false) @map("biometric_enabled")
+  deviceIds       String[] @map("device_ids")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  votes           Vote[]
+  candidacies     Candidate[]
+  createdElections Election[] @relation("ElectionCreator")
+  auditLogs       AuditLog[]
+  refreshTokens   RefreshToken[]
+  otpTokens       OTPToken[]
+  ballotTokens    BallotToken[]
+
+  @@map("users")
+}
+
+model Election {
+  id              String        @id @default(uuid())
+  title           String
+  description     String
+  category        String
+  startDate       DateTime      @map("start_date")
+  endDate         DateTime      @map("end_date")
+  isActive        Boolean       @default(false) @map("is_active")
+  allowDelayedReveal Boolean    @default(false) @map("allow_delayed_reveal")
+  revealDate      DateTime?     @map("reveal_date")
+  maxVotesPerUser Int          @default(1) @map("max_votes_per_user")
+  eligibleFaculties String[]    @map("eligible_faculties")
+  eligibleYears   Int[]         @map("eligible_years")
+  createdById     String        @map("created_by_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  creator         User          @relation("ElectionCreator", fields: [createdById], references: [id])
+  candidates      Candidate[]
+  votes           Vote[]
+  ballotTokens    BallotToken[]
+
+  @@map("elections")
+}
+
+model Candidate {
+  id              String   @id @default(uuid())
+  electionId      String   @map("election_id")
+  userId          String   @map("user_id")
+  manifesto       String
+  photoUrl        String?  @map("photo_url")
+  videoUrl        String?  @map("video_url")
+  isApproved      Boolean  @default(false) @map("is_approved")
+  voteCount       Int      @default(0) @map("vote_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  election        Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id])
+  votes           Vote[]
+
+  @@unique([electionId, userId])
+  @@map("candidates")
+}
+
+model Vote {
+  id              String   @id @default(uuid())
+  electionId      String   @map("election_id")
+  candidateId     String   @map("candidate_id")
+  voterId         String   @map("voter_id")
+  encryptedVote   String   @map("encrypted_vote")
+  voteSignature   String   @map("vote_signature")
+  ballotTokenId   String   @unique @map("ballot_token_id")
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  election        Election    @relation(fields: [electionId], references: [id])
+  candidate       Candidate   @relation(fields: [candidateId], references: [id])
+  voter           User        @relation(fields: [voterId], references: [id])
+  ballotToken     BallotToken @relation(fields: [ballotTokenId], references: [id])
+
+  @@unique([electionId, voterId]) // Prevent double voting
+  @@map("votes")
+}
+
+model BallotToken {
+  id              String    @id @default(uuid())
+  token           String    @unique
+  electionId      String    @map("election_id")
+  userId          String    @map("user_id")
+  isUsed          Boolean   @default(false) @map("is_used")
+  expiresAt       DateTime  @map("expires_at")
+  usedAt          DateTime? @map("used_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  election        Election  @relation(fields: [electionId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
+  vote            Vote?
+
+  @@map("ballot_tokens")
+}
+
+model RefreshToken {
+  id              String   @id @default(uuid())
+  token           String   @unique
+  userId          String   @map("user_id")
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model OTPToken {
+  id              String    @id @default(uuid())
+  token           String    @unique
+  userId          String    @map("user_id")
+  purpose         String    // PASSWORD_RESET, EMAIL_VERIFICATION
+  isUsed          Boolean   @default(false) @map("is_used")
+  expiresAt       DateTime  @map("expires_at")
+  usedAt          DateTime? @map("used_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_tokens")
+}
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  userId          String?  @map("user_id")
+  action          String
+  resource        String
+  resourceId      String?  @map("resource_id")
+  details         Json?
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+  previousHash    String?  @map("previous_hash")
+  currentHash     String   @map("current_hash")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user            User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id              String   @id @default(uuid())
+  key             String   @unique
+  value           String
+  description     String?
+  isEncrypted     Boolean  @default(false) @map("is_encrypted")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("system_config")
+}
+
+enum UserRole {
+  STUDENT
+  CANDIDATE
+  ADMIN
+  ELECTORAL_COMMITTEE
+
+  @@map("user_role")
+}
