@@ -136,7 +136,7 @@ export class SecurityService {
 
     return jwt.sign(payload, secret, {
       expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',
-    });
+    } as jwt.SignOptions);
   }
 
   static generateRefreshToken(user: User): string {
@@ -153,7 +153,7 @@ export class SecurityService {
 
     return jwt.sign(payload, secret, {
       expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d',
-    });
+    } as jwt.SignOptions);
   }
 
   static async verifyJwtToken(token: string): Promise<JwtPayload> {

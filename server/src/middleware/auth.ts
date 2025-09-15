@@ -15,13 +15,26 @@ declare global {
         email?: string;
         firstName?: string;
         lastName?: string;
+        faculty?: string;
+        department?: string;
+        yearOfStudy?: number;
       };
     }
   }
 }
 
 interface AuthRequest extends Request {
-  user: NonNullable<Request['user']>;
+  user: {
+    id: string;
+    matricNumber: string;
+    role: UserRole;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    faculty?: string;
+    department?: string;
+    yearOfStudy?: number;
+  };
 }
 
 const logger = new LoggerService();
@@ -31,11 +44,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     const authHeader = req.headers.authorization;
     
     if (!authHeader) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Unauthorized',
         message: 'Authorization header is required',
         code: 'MISSING_AUTH_HEADER',
       });
+      return;
     }
 
     const token = authHeader.startsWith('Bearer ') 
@@ -43,11 +57,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       : authHeader;
 
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Unauthorized',
         message: 'Access token is required',
         code: 'MISSING_TOKEN',
       });
+      return;
     }
 
     // Verify JWT token
@@ -57,11 +72,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     const user = await DatabaseService.getUserById(payload.id);
     
     if (!user || !user.isActive) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Unauthorized',
         message: 'User account is inactive or not found',
         code: 'INACTIVE_USER',
       });
+      return;
     }
 
     // Attach user to request object
@@ -72,6 +88,9 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      faculty: user.faculty || undefined,
+      department: user.department || undefined,
+      yearOfStudy: user.yearOfStudy || undefined,
     };
 
     // Log successful authentication
@@ -92,7 +111,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       userAgent: req.headers['user-agent'],
     });
 
-    return res.status(401).json({
+    res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid or expired access token',
       code: 'INVALID_TOKEN',
@@ -104,11 +123,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 export const requireRole = (...roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Unauthorized',
         message: 'Authentication required',
         code: 'UNAUTHENTICATED',
       });
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
@@ -119,11 +139,12 @@ export const requireRole = (...roles: UserRole[]) => {
         endpoint: req.path,
       });
 
-      return res.status(403).json({
+      res.status(403).json({
         error: 'Forbidden',
         message: `Access denied. Required roles: ${roles.join(', ')}`,
         code: 'INSUFFICIENT_ROLE',
       });
+      return;
     }
 
     next();
@@ -166,6 +187,9 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
+            faculty: user.faculty || undefined,
+            department: user.department || undefined,
+            yearOfStudy: user.yearOfStudy || undefined,
           };
         }
       }
@@ -201,21 +225,23 @@ export const requireDeviceAttestation = async (req: Request, res: Response, next
         endpoint: req.path,
       });
 
-      return res.status(403).json({
+      res.status(403).json({
         error: 'Device Security Check Failed',
         message: 'Your device failed security verification. Please use a secure device.',
         code: 'DEVICE_ATTESTATION_FAILED',
       });
+      return;
     }
 
     next();
   } catch (error) {
     logger.error('Device attestation error', error);
-    return res.status(500).json({
+    res.status(500).json({
       error: 'Internal Server Error',
       message: 'Device security check failed',
       code: 'DEVICE_ATTESTATION_ERROR',
     });
+    return;
   }
 };
 
@@ -238,11 +264,12 @@ export const detectSuspiciousActivity = (req: Request, res: Response, next: Next
 
     // Don't block in development, but log the activity
     if (process.env.NODE_ENV !== 'development') {
-      return res.status(403).json({
+      res.status(403).json({
         error: 'Suspicious Activity Detected',
         message: 'Your request has been flagged for security review',
         code: 'SUSPICIOUS_ACTIVITY',
       });
+      return;
     }
   }
 
@@ -254,11 +281,12 @@ export const validateApiKey = (req: Request, res: Response, next: NextFunction):
   const apiKey = req.headers['x-api-key'] as string;
   
   if (!apiKey) {
-    return res.status(401).json({
+    res.status(401).json({
       error: 'Unauthorized',
       message: 'API key is required',
       code: 'MISSING_API_KEY',
     });
+    return;
   }
 
   // In a real implementation, validate against stored API keys
@@ -272,11 +300,12 @@ export const validateApiKey = (req: Request, res: Response, next: NextFunction):
       endpoint: req.path,
     });
 
-    return res.status(401).json({
+    res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid API key',
       code: 'INVALID_API_KEY',
     });
+    return;
   }
 
   next();

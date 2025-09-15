@@ -415,7 +415,7 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 // Forgot password endpoint
-router.post('/forgot-password', detectSuspiciousActivity, asyncHandler(async (req: Request, res: Response) => {
+router.post('/forgot-password', detectSuspiciousActivity, asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email } = req.body;
 
   if (!email) {
@@ -439,7 +439,8 @@ router.post('/forgot-password', detectSuspiciousActivity, asyncHandler(async (re
       { email, result: 'user_not_found' }
     );
 
-    return res.json({ message: successMessage });
+    res.json({ message: successMessage });
+    return;
   }
 
   // Generate reset token
