@@ -165,6 +165,9 @@ export const requireStudent = requireRole(
 // Electoral committee or admin only
 export const requireCommitteeOrAdmin = requireRole(UserRole.ELECTORAL_COMMITTEE, UserRole.ADMIN);
 
+// Auth middleware alias for cleaner imports
+export const requireAuth = authMiddleware;
+
 // Optional authentication middleware (doesn't fail if no token)
 export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
