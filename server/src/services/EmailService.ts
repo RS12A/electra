@@ -647,6 +647,161 @@ export class EmailService {
     });
   }
 
+  static async sendWelcomeEmail(email: string, firstName: string, temporaryPassword: string): Promise<boolean> {
+    const universityName = process.env.UNIVERSITY_NAME || 'Kwara State University';
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+    const subject = `Welcome to Electra - Your Account is Ready`;
+    
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to Electra</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+          }
+          .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4caf50;
+            margin-bottom: 10px;
+          }
+          .welcome {
+            background-color: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+          }
+          .credentials {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+          }
+          .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4caf50;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+          }
+          .security-notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #856404;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">🎉 Welcome to Electra</div>
+            <div>${universityName}</div>
+          </div>
+          
+          <div class="welcome">
+            <h2>Hello ${firstName}!</h2>
+            <p>Your Electra account has been created successfully. You can now participate in university elections and democratic processes.</p>
+          </div>
+          
+          <div class="content">
+            <h3>Your Login Credentials</h3>
+            <div class="credentials">
+              <p><strong>Email:</strong> ${email}</p>
+              <p><strong>Temporary Password:</strong> ${temporaryPassword}</p>
+            </div>
+            
+            <div class="security-notice">
+              <strong>🔐 Important Security Steps:</strong>
+              <ol>
+                <li>Log in using the credentials above</li>
+                <li>Change your password immediately</li>
+                <li>Set up biometric authentication if available</li>
+                <li>Never share your login credentials</li>
+              </ol>
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="${baseUrl}/login" class="button">Login to Electra</a>
+            </div>
+            
+            <h3>What You Can Do</h3>
+            <ul>
+              <li>🗳️ Participate in elections</li>
+              <li>📋 Apply to become a candidate</li>
+              <li>📊 View election results</li>
+              <li>⚙️ Manage your profile settings</li>
+              <li>🔔 Receive election notifications</li>
+            </ul>
+            
+            <p>If you have any questions or need assistance, please contact the electoral committee.</p>
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
+            <p>This account was created by an administrator at ${universityName}.</p>
+            <p>Electra Voting System - Secure, Transparent, Democratic</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const text = `
+      Welcome to Electra Voting System!
+      
+      Hello ${firstName},
+      
+      Your account has been created successfully.
+      
+      Login Credentials:
+      Email: ${email}
+      Temporary Password: ${temporaryPassword}
+      
+      Please log in at ${baseUrl}/login and change your password immediately.
+      
+      Welcome to the democratic process at ${universityName}!
+      
+      Electoral Committee
+    `;
+
+    return this.sendEmail({
+      to: email,
+      subject,
+      html,
+      text,
+    });
+  }
+
   static async testEmailConfiguration(): Promise<boolean> {
     try {
       const testEmail = process.env.SMTP_USER || 'test@example.com';
