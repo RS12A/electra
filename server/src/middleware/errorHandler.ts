@@ -275,6 +275,13 @@ export const asyncHandler = (fn: Function) => {
   };
 };
 
+// Async error wrapper for authenticated route handlers
+export const authAsyncHandler = (fn: (req: any, res: Response, next?: NextFunction) => Promise<any>) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
 // Not found middleware (404 handler)
 export const notFound = (req: Request, res: Response, next: NextFunction) => {
   const error = new NotFoundError(`Route not found: ${req.method} ${req.originalUrl}`);
