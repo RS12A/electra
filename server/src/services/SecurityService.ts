@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
 import crypto from 'crypto';
-import { User, UserRole } from '@prisma/client';
+import { User, UserRole } from '../types/prisma';
 import { LoggerService } from './LoggerService';
 import fs from 'fs';
 import path from 'path';
@@ -129,7 +129,12 @@ export class SecurityService {
       role: user.role,
     };
 
-    return jwt.sign(payload, process.env.JWT_SECRET!, {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+
+    return jwt.sign(payload, secret, {
       expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',
     });
   }
@@ -141,7 +146,12 @@ export class SecurityService {
       role: user.role,
     };
 
-    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET!, {
+    const secret = process.env.JWT_REFRESH_SECRET;
+    if (!secret) {
+      throw new Error('JWT_REFRESH_SECRET environment variable is required');
+    }
+
+    return jwt.sign(payload, secret, {
       expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d',
     });
   }
@@ -172,12 +182,12 @@ export class SecurityService {
       // Convert vote data to JSON string
       const voteJson = JSON.stringify(voteData);
 
-      // Generate AES key for this vote
-      const aesKey = crypto.randomBytes(32);
+      // Generate AES key and IV for this vote
+      const aesKey = Buffer.from(process.env.VOTE_ENCRYPTION_KEY!, 'hex');
       const iv = crypto.randomBytes(16);
 
       // Encrypt vote with AES-256-GCM
-      const cipher = crypto.createCipher('aes-256-gcm', process.env.VOTE_ENCRYPTION_KEY!);
+      const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
       let encrypted = cipher.update(voteJson, 'utf8', 'hex');
       encrypted += cipher.final('hex');
       const authTag = cipher.getAuthTag();
@@ -189,8 +199,9 @@ export class SecurityService {
       };
 
       // Sign the encrypted data with RSA private key
-      const signature = crypto.sign('sha512', Buffer.from(JSON.stringify(encryptedData)));
-      const signatureHex = signature.sign(this.privateKey, 'hex');
+      const sign = crypto.createSign('sha512');
+      sign.update(JSON.stringify(encryptedData));
+      const signatureHex = sign.sign(this.privateKey, 'hex');
 
       return {
         encryptedData: JSON.stringify(encryptedData),
@@ -221,7 +232,10 @@ export class SecurityService {
   static decryptVote(encryptedData: string): object {
     try {
       const data = JSON.parse(encryptedData);
-      const decipher = crypto.createDecipher('aes-256-gcm', process.env.VOTE_ENCRYPTION_KEY!);
+      const aesKey = Buffer.from(process.env.VOTE_ENCRYPTION_KEY!, 'hex');
+      const iv = Buffer.from(data.iv, 'hex');
+      
+      const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
       decipher.setAuthTag(Buffer.from(data.authTag, 'hex'));
 
       let decrypted = decipher.update(data.data, 'hex', 'utf8');

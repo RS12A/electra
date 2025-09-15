@@ -70,5 +70,9 @@
     "typescript": "^5.9.2",
     "uuid": "^13.0.0",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/morgan": "^1.9.10"
   }
 }

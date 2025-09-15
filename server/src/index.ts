@@ -35,7 +35,7 @@ dotenv.config();
 class ElectraServer {
   private app: express.Application;
   private server: any;
-  private io: SocketIOServer;
+  private io: SocketIOServer | undefined;
   private logger: LoggerService;
 
   constructor() {
@@ -105,7 +105,7 @@ class ElectraServer {
     if (process.env.ENABLE_REQUEST_LOGGING === 'true') {
       this.app.use(morgan('combined', {
         stream: {
-          write: (message) => this.logger.info(message.trim()),
+          write: (message: string) => this.logger.info(message.trim()),
         },
       }));
     }
@@ -231,7 +231,7 @@ class ElectraServer {
     });
 
     // Store socket.io instance globally for use in other services
-    global.io = this.io;
+    (global as any).io = this.io;
   }
 
   private initializeErrorHandling() {
@@ -266,7 +266,8 @@ class ElectraServer {
 
     // Handle unhandled rejections
     process.on('unhandledRejection', (reason, promise) => {
-      this.logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+      this.logger.error('Unhandled Rejection at:', promise);
+      this.logger.error('Reason:', reason);
       this.shutdown(1);
     });
   }
