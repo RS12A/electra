@@ -15,13 +15,26 @@ declare global {
         email?: string;
         firstName?: string;
         lastName?: string;
+        faculty?: string;
+        department?: string;
+        yearOfStudy?: number;
       };
     }
   }
 }
 
 interface AuthRequest extends Request {
-  user: NonNullable<Request['user']>;
+  user: {
+    id: string;
+    matricNumber: string;
+    role: UserRole;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    faculty?: string;
+    department?: string;
+    yearOfStudy?: number;
+  };
 }
 
 const logger = new LoggerService();
@@ -75,6 +88,9 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      faculty: user.faculty || undefined,
+      department: user.department || undefined,
+      yearOfStudy: user.yearOfStudy || undefined,
     };
 
     // Log successful authentication
@@ -171,6 +187,9 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
+            faculty: user.faculty || undefined,
+            department: user.department || undefined,
+            yearOfStudy: user.yearOfStudy || undefined,
           };
         }
       }
