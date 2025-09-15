@@ -183,10 +183,11 @@ router.get('/:userId', requireAdmin, asyncHandler(async (req: Request, res: Resp
   });
 
   if (!user) {
-    return res.status(404).json({
+    res.status(404).json({
       error: 'User not found',
       message: 'The requested user does not exist',
     });
+    return;
   }
 
   res.json({
