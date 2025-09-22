@@ -32,6 +32,10 @@ from .permissions import (
     CanViewAuditLogs,
 )
 
+# Import audit logging utilities
+from electra_server.apps.audit.utils import log_vote_event
+from electra_server.apps.audit.models import AuditActionType
+
 logger = logging.getLogger(__name__)
 
 
@@ -115,6 +119,22 @@ class VoteCastView(views.APIView):
                         "vote_token": str(vote_token),
                     },
                     result="success",
+                )
+
+                # Add audit log entry for vote cast (anonymous)
+                log_vote_event(
+                    action_type=AuditActionType.VOTE_CAST,
+                    vote=vote,
+                    election=election,
+                    user=None,  # Maintain ballot secrecy
+                    request=request,
+                    outcome='success',
+                    metadata={
+                        'election_title': election.title,
+                        'vote_token_hash': str(vote_token)[:8] + '...',  # Partial token for correlation
+                        'encryption_method': 'AESGCM',
+                        'ballot_token_used': True,
+                    }
                 )
 
                 # Log ballot token usage

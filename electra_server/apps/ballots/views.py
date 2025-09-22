@@ -33,6 +33,10 @@ from .serializers import (
     BallotTokenUsageLogSerializer, BallotTokenStatsSerializer
 )
 
+# Import audit logging utilities
+from electra_server.apps.audit.utils import log_token_event
+from electra_server.apps.audit.models import AuditActionType
+
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
@@ -89,6 +93,22 @@ class BallotTokenRequestView(generics.CreateAPIView):
                 self.log_token_action(
                     ballot_token, 'issued', ip_address, user_agent,
                     {'election_title': election.title}
+                )
+                
+                # Add audit log entry for token issuance
+                log_token_event(
+                    action_type=AuditActionType.TOKEN_ISSUED,
+                    token=ballot_token,
+                    user=request.user,
+                    request=request,
+                    outcome='success',
+                    metadata={
+                        'election_title': election.title,
+                        'election_id': str(election.id),
+                        'token_status': ballot_token.status,
+                        'issued_ip': ip_address,
+                        'user_role': request.user.role,
+                    }
                 )
                 
                 # Create response
