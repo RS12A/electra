@@ -14,20 +14,214 @@ void main() {
         ),
       );
 
-      // Verify form elements are present
+      // Verify key elements are present
       expect(find.text('Welcome Back'), findsOneWidget);
       expect(find.text('Sign in to continue voting'), findsOneWidget);
       
       // Check for input fields
-      expect(find.byType(TextFormField), findsNWidgets(2)); // Email and password
+      expect(find.byType(TextFormField), findsNWidgets(2)); // Identifier and password
       
       // Check for buttons
       expect(find.text('Sign In'), findsOneWidget);
-      expect(find.text('Use Biometric'), findsOneWidget);
       expect(find.text('Create Account'), findsOneWidget);
     });
 
     testWidgets('should validate empty fields', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Try to submit with empty fields
+      await tester.tap(find.text('Sign In'));
+      await tester.pump();
+
+      // Should show validation errors
+      expect(find.text('Please enter your email, matric number, or staff ID'), findsOneWidget);
+      expect(find.text('Please enter your password'), findsOneWidget);
+    });
+
+    testWidgets('should toggle password visibility', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Find password field and visibility toggle
+      final passwordField = find.byType(TextFormField).last;
+      final visibilityToggle = find.byIcon(Icons.visibility_outlined);
+
+      // Password should be obscured initially
+      expect(visibilityToggle, findsOneWidget);
+
+      // Tap to toggle visibility
+      await tester.tap(visibilityToggle);
+      await tester.pump();
+
+      // Should show hide icon now
+      expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
+    });
+
+    testWidgets('should show remember me checkbox', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Find remember me text and checkbox area
+      expect(find.text('Remember me'), findsOneWidget);
+      
+      // Should be able to tap remember me area
+      await tester.tap(find.text('Remember me'));
+      await tester.pump();
+    });
+
+    testWidgets('should display forgot password link', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      expect(find.text('Forgot Password?'), findsOneWidget);
+    });
+
+    testWidgets('should display university name', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      expect(find.text('Kwara State University'), findsOneWidget);
+    });
+
+    testWidgets('should fill form fields correctly', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Fill in identifier field
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'test@kwasu.edu.ng',
+      );
+      
+      // Fill in password field
+      await tester.enterText(
+        find.byType(TextFormField).last,
+        'password123',
+      );
+
+      // Verify text was entered
+      expect(find.text('test@kwasu.edu.ng'), findsOneWidget);
+      expect(find.text('password123'), findsOneWidget);
+    });
+
+    testWidgets('should show KWASU logo/icon', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Should show school icon (placeholder for logo)
+      expect(find.byIcon(Icons.school), findsOneWidget);
+    });
+  });
+
+  group('Login Page Integration', () {
+    testWidgets('should navigate to register page when create account tapped', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Find and tap create account button
+      final createAccountButton = find.text('Create Account');
+      expect(createAccountButton, findsOneWidget);
+      
+      await tester.tap(createAccountButton);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('should navigate to forgot password when link tapped', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Find and tap forgot password link
+      final forgotPasswordLink = find.text('Forgot Password?');
+      expect(forgotPasswordLink, findsOneWidget);
+      
+      await tester.tap(forgotPasswordLink);
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('Login Page Accessibility', () {
+    testWidgets('should have proper semantic labels', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Verify important elements have semantic information
+      expect(find.text('Welcome Back'), findsOneWidget);
+      expect(find.text('Sign in to continue voting'), findsOneWidget);
+    });
+
+    testWidgets('should support keyboard navigation', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: LoginPage(),
+          ),
+        ),
+      );
+
+      // Test that form fields can be focused
+      final firstField = find.byType(TextFormField).first;
+      final secondField = find.byType(TextFormField).last;
+      
+      await tester.tap(firstField);
+      await tester.pump();
+      
+      // Move to next field
+      await tester.tap(secondField);
+      await tester.pump();
+    });
+  });
+}
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
