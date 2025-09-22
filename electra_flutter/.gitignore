@@ -1,0 +1,62 @@
+# Build outputs
+build/
+.dart_tool/
+
+# Flutter/Dart specific
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.config.dart
+/lib/generated/
+
+# Test coverage
+coverage/
+test/.test_coverage.dart
+
+# Logs
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Environment specific
+.env
+.env.local
+.env.production
+
+# Temporary files
+*.tmp
+*.temp
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+
+# Keys and certificates
+*.keystore
+*.jks
+android/key.properties
+
+# iOS specific
+ios/Flutter/Generated.xcconfig
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Android specific
+android/app/release/
+
+# Web specific
+web/index.html.backup

@@ -1,0 +1,133 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: 
+      - 'electra_flutter/**'
+  pull_request:
+    branches: [ main ]
+    paths: 
+      - 'electra_flutter/**'
+
+defaults:
+  run:
+    working-directory: electra_flutter
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.9'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Generate code
+      run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+    - name: Analyze code
+      run: flutter analyze
+      
+    - name: Run unit tests
+      run: flutter test --coverage
+      
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: electra_flutter/coverage/lcov.info
+        
+  build-android:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.9'
+        cache: true
+        
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Generate code
+      run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+    - name: Build APK
+      run: flutter build apk --release
+      
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-apk
+        path: electra_flutter/build/app/outputs/flutter-apk/app-release.apk
+        
+  build-ios:
+    needs: test
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.9'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Generate code
+      run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+    - name: Build iOS (no codesign)
+      run: flutter build ios --release --no-codesign
+      
+  build-web:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.9'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Generate code
+      run: flutter packages pub run build_runner build --delete-conflicting-outputs
+      
+    - name: Build Web
+      run: flutter build web --release
+      
+    - name: Upload Web artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: web-build
+        path: electra_flutter/build/web/
