@@ -1,0 +1,3 @@
+"""
+Tests for ballots app.
+"""
