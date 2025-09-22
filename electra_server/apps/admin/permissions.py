@@ -12,7 +12,7 @@ from rest_framework.request import Request
 from rest_framework.views import View
 
 from electra_server.apps.auth.models import UserRole
-from electra_server.apps.audit.utils import log_system_event
+from electra_server.apps.audit.utils import log_user_action
 from electra_server.apps.audit.models import AuditActionType
 
 logger = logging.getLogger('electra_server.admin')
@@ -111,11 +111,13 @@ class AdminPermission(permissions.BasePermission):
             user_identifier = request.user.email
             user_id = request.user.id
         
-        log_system_event(
+        log_user_action(
             action_type=AuditActionType.USER_LOGIN_FAILED,
             description=f'Admin API access denied: {reason}',
+            user=request.user if request.user and request.user.is_authenticated else None,
             outcome='error',
-            user=request.user if request.user.is_authenticated else None,
+            target_resource_type='AdminAPI',
+            target_resource_id=request.path,
             metadata={
                 'endpoint': request.path,
                 'method': request.method,
@@ -147,11 +149,13 @@ class AdminPermission(permissions.BasePermission):
         Args:
             request: HTTP request object
         """
-        log_system_event(
+        log_user_action(
             action_type=AuditActionType.USER_LOGIN,
             description='Admin API access granted',
-            outcome='success',
             user=request.user,
+            outcome='success',
+            target_resource_type='AdminAPI',
+            target_resource_id=request.path,
             metadata={
                 'endpoint': request.path,
                 'method': request.method,
@@ -241,11 +245,13 @@ class ElectionManagementPermission(AdminPermission):
         
         # Additional logging for election management
         if request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            log_system_event(
+            log_user_action(
                 action_type=AuditActionType.ADMIN_ACTION,
                 description=f'Election management action attempted: {request.method}',
-                outcome='in_progress',
                 user=request.user,
+                outcome='in_progress',
+                target_resource_type='Election',
+                target_resource_id=request.path,
                 metadata={
                     'endpoint': request.path,
                     'method': request.method,
@@ -281,11 +287,13 @@ class BallotTokenManagementPermission(AdminPermission):
             return False
         
         # Log all ballot token operations for security
-        log_system_event(
+        log_user_action(
             action_type=AuditActionType.ADMIN_ACTION,
             description=f'Ballot token management action: {request.method}',
-            outcome='in_progress',
             user=request.user,
+            outcome='in_progress',
+            target_resource_type='BallotToken',
+            target_resource_id=request.path,
             metadata={
                 'endpoint': request.path,
                 'method': request.method,

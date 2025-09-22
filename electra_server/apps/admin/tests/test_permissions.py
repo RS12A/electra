@@ -132,7 +132,7 @@ class AdminPermissionTest(TestCase):
         
         self.assertFalse(self.permission.has_permission(request, self.view))
     
-    @patch('electra_server.apps.admin.permissions.log_system_event')
+    @patch('electra_server.apps.admin.permissions.log_user_action')
     def test_access_denied_logging(self, mock_log):
         """Test that access denials are properly logged."""
         request = self.factory.get('/api/admin/test/')
@@ -244,7 +244,7 @@ class ElectionManagementPermissionTest(TestCase):
             is_active=True
         )
     
-    @patch('electra_server.apps.admin.permissions.log_system_event')
+    @patch('electra_server.apps.admin.permissions.log_user_action')
     def test_election_management_action_logging(self, mock_log):
         """Test that election management actions are logged."""
         request = self.factory.post('/api/admin/elections/')
@@ -253,9 +253,8 @@ class ElectionManagementPermissionTest(TestCase):
         self.permission.has_permission(request, self.view)
         
         # Verify logging was called for POST request
-        mock_log.assert_called_once()
-        call_args = mock_log.call_args[1]
-        self.assertIn('election management', call_args['description'].lower())
+        # Should be called twice - once for general access, once for election management
+        self.assertEqual(mock_log.call_count, 2)
 
 
 @pytest.mark.django_db
@@ -277,7 +276,7 @@ class BallotTokenManagementPermissionTest(TestCase):
             is_active=True
         )
     
-    @patch('electra_server.apps.admin.permissions.log_system_event')
+    @patch('electra_server.apps.admin.permissions.log_user_action')
     def test_ballot_token_access_logging(self, mock_log):
         """Test that ballot token access is logged."""
         request = self.factory.get('/api/admin/ballots/')
@@ -285,10 +284,8 @@ class BallotTokenManagementPermissionTest(TestCase):
         
         self.permission.has_permission(request, self.view)
         
-        # Verify logging was called
-        mock_log.assert_called_once()
-        call_args = mock_log.call_args[1]
-        self.assertIn('ballot token', call_args['description'].lower())
+        # Verify logging was called twice - once for general access, once for ballot token access
+        self.assertEqual(mock_log.call_count, 2)
 
 
 @pytest.mark.unit

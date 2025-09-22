@@ -127,7 +127,7 @@ class AdminUserSerializerTest(TestCase):
     def test_user_create_serializer_password_mismatch(self):
         """Test AdminUserCreateSerializer with password mismatch."""
         data = {
-            'email': 'test@test.com',
+            'email': 'unique@test.com',  # Use unique email
             'full_name': 'Test User',
             'staff_id': 'TEST002',
             'role': UserRole.STAFF,
@@ -347,7 +347,7 @@ class AdminBallotTokenSerializerTest(TestCase):
         serializer = AdminBallotTokenDetailSerializer(self.ballot_token)
         data = serializer.data
         
-        self.assertEqual(data['user_email'], self.test_user.email)
+        self.assertEqual(data['user_details']['email'], self.test_user.email)
         self.assertIn('user_details', data)
         self.assertIn('election_details', data)
         self.assertIn('offline_data', data)

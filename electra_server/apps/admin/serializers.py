@@ -148,12 +148,14 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
                 })
         elif role in [UserRole.STAFF, UserRole.ADMIN, UserRole.ELECTORAL_COMMITTEE]:
             if not staff_id:
+                role_display = dict(UserRole.choices)[role]
                 raise serializers.ValidationError({
-                    'staff_id': f'{role.label} must have a staff ID.'
+                    'staff_id': f'{role_display} must have a staff ID.'
                 })
             if matric_number:
+                role_display = dict(UserRole.choices)[role]
                 raise serializers.ValidationError({
-                    'matric_number': f'{role.label} should not have a matriculation number.'
+                    'matric_number': f'{role_display} should not have a matriculation number.'
                 })
         # Candidates can have either
         
