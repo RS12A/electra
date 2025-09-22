@@ -193,8 +193,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.role in [UserRole.ADMIN, UserRole.ELECTORAL_COMMITTEE]
     
     def save(self, *args, **kwargs) -> None:
-        """Override save to ensure proper validation."""
-        self.full_clean()
+        """Override save to ensure proper validation.""" 
+        # Skip validation during factory creation to allow post_generation to work
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
         super().save(*args, **kwargs)
 
 

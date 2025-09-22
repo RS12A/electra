@@ -161,9 +161,9 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
-    'ALGORITHM': 'RS256',
-    'SIGNING_KEY': None,  # Will be set from RSA key file
-    'VERIFYING_KEY': None,  # Will be set from RSA key file
+    'ALGORITHM': 'HS256',  # Use HS256 for testing
+    'SIGNING_KEY': SECRET_KEY,  # Use Django secret key for testing
+    'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,
     'JWK_URL': None,

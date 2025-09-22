@@ -203,7 +203,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         help_text='Login identifier based on role'
     )
     can_manage_elections = serializers.BooleanField(
-        source='can_manage_elections',
         read_only=True,
         help_text='Whether user can manage elections'
     )
