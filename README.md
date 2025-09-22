@@ -149,6 +149,48 @@ curl http://localhost:8000/api/health/
 ### Admin Interface
 - `/admin/` - Django admin interface with comprehensive user management
 
+### Election Management
+
+#### Core Election Operations
+- `GET /api/elections/` - List elections (admin/electoral_committee see all; others see non-draft only)
+- `GET /api/elections/<uuid:id>/` - Get election details
+- `POST /api/elections/create/` - Create new election (admin/electoral_committee only)
+- `PUT /api/elections/<uuid:id>/update/` - Update election (admin/electoral_committee only)
+- `PATCH /api/elections/<uuid:id>/update/` - Partial update election (admin/electoral_committee only)
+- `DELETE /api/elections/<uuid:id>/delete/` - Delete draft election (admin/electoral_committee only)
+
+#### Election Status Management
+- `PATCH /api/elections/<uuid:id>/status/` - Change election status (admin/electoral_committee only)
+  - `{"action": "activate"}` - Activate a draft election
+  - `{"action": "cancel"}` - Cancel an active or draft election  
+  - `{"action": "complete"}` - Mark an active election as completed
+
+#### Election Lifecycle
+1. **Draft** - Initial creation state, only visible to election managers
+2. **Active** - Election is running and users can vote (within start_time - end_time period)
+3. **Completed** - Election has finished successfully
+4. **Cancelled** - Election has been cancelled
+
+#### Election Fields
+- `id` (UUID) - Unique election identifier
+- `title` (String) - Election title
+- `description` (Text) - Detailed election description
+- `start_time` (DateTime) - When voting begins
+- `end_time` (DateTime) - When voting ends
+- `status` (Choice) - Current election status (draft/active/completed/cancelled)
+- `delayed_reveal` (Boolean) - Whether results are revealed after completion
+- `created_by` (User) - Election creator
+- `created_at` (DateTime) - Creation timestamp
+- `updated_at` (DateTime) - Last update timestamp
+
+#### Permissions & Access Control
+- **Admin & Electoral Committee**: Full election management (create, update, delete, status changes)
+- **Students & Staff**: View non-draft elections, participate in voting
+- **Election Status Restrictions**:
+  - Only draft elections can be deleted
+  - Elections cannot be modified during active voting period
+  - Start/end times cannot be changed after election has started/ended
+
 ### Authentication Flow Example
 
 ```bash
@@ -294,13 +336,18 @@ pytest --cov=apps --cov-report=html
 
 ```
 tests/
-├── test_health.py                    # Health endpoint tests
-├── electra_server/apps/auth/tests/   # Authentication module tests
-│   ├── test_models.py               # User, OTP, LoginAttempt model tests
-│   ├── test_permissions.py          # Role-based permission tests  
-│   ├── test_views.py                # API endpoint tests
-│   └── factories.py                 # Test data factories
-└── apps/*/tests.py                  # Other app-specific tests
+├── test_health.py                     # Health endpoint tests
+├── electra_server/apps/auth/tests/    # Authentication module tests
+│   ├── test_models.py                # User, OTP, LoginAttempt model tests
+│   ├── test_permissions.py           # Role-based permission tests  
+│   ├── test_views.py                 # API endpoint tests
+│   └── factories.py                  # Test data factories
+├── electra_server/apps/elections/tests/ # Election management tests
+│   ├── test_models.py                # Election model and lifecycle tests
+│   ├── test_permissions.py           # Election permission tests
+│   ├── test_views.py                 # Election API endpoint tests
+│   └── factories.py                  # Election test data factories
+└── apps/*/tests.py                   # Other app-specific tests
 ```
 
 ### Running Authentication Tests
@@ -315,6 +362,21 @@ pytest electra_server/apps/auth/tests/test_models.py -v
 
 # Run tests with coverage
 pytest electra_server/apps/auth/tests/ --cov=electra_server.apps.auth --cov-report=html
+```
+
+### Running Election Tests
+
+```bash
+# Run all election tests
+pytest electra_server/apps/elections/tests/ -v
+
+# Run specific election test modules
+pytest electra_server/apps/elections/tests/test_models.py -v
+pytest electra_server/apps/elections/tests/test_views.py -v
+pytest electra_server/apps/elections/tests/test_permissions.py -v
+
+# Run tests with coverage
+pytest electra_server/apps/elections/tests/ --cov=electra_server.apps.elections --cov-report=html
 ```
 
 ### Writing Tests
@@ -470,7 +532,7 @@ electra/
 │   │   ├── dev.py             # Development settings  
 │   │   └── prod.py            # Production settings
 │   ├── apps/                  # Django applications
-│   │   └── auth/              # Authentication module
+│   │   ├── auth/              # Authentication module
 │   │       ├── models.py      # User, OTP, LoginAttempt models
 │   │       ├── views.py       # Authentication API views
 │   │       ├── serializers.py # DRF serializers
@@ -479,6 +541,14 @@ electra/
 │   │       ├── admin.py       # Django admin integration
 │   │       ├── urls.py        # Authentication URL patterns
 │   │       └── tests/         # Comprehensive test suite
+│   │   └── elections/         # Election management module  
+│   │       ├── models.py      # Election model with lifecycle management
+│   │       ├── views.py       # Election management API views
+│   │       ├── serializers.py # Election CRUD serializers
+│   │       ├── permissions.py # Election-specific permissions
+│   │       ├── admin.py       # Django admin for elections
+│   │       ├── urls.py        # Election URL patterns
+│   │       └── tests/         # Election test suite (models, views, permissions)
 │   ├── middleware.py          # Custom middleware
 │   ├── logging.py             # JSON logging formatter
 │   └── exceptions.py          # Custom exception handlers

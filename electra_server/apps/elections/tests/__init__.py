@@ -1,0 +1,3 @@
+"""
+Election tests initialization.
+"""
