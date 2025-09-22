@@ -314,10 +314,24 @@ os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 # Cache configuration (Redis)
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': env('REDIS_URL', default='redis://127.0.0.1:6379/0'),
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
 }
+
+# Override with Redis if available in production
+try:
+    import redis
+    redis_url = env('REDIS_URL', default=None)
+    if redis_url and not ('test' in sys.argv):
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+                'LOCATION': redis_url,
+            }
+        }
+except ImportError:
+    pass
 
 # Custom user model
 AUTH_USER_MODEL = 'electra_auth.User'

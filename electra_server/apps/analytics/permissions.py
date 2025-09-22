@@ -108,7 +108,7 @@ class AnalyticsPermission(permissions.BasePermission):
         if request.user and hasattr(request.user, 'id'):
             log_user_action(
                 user=request.user,
-                action_type=AuditActionType.ADMIN_ACCESS,
+                action_type=AuditActionType.ADMIN_ACTION,
                 description=f'Analytics access denied: {reason}',
                 outcome='denied',
                 metadata={
@@ -140,7 +140,7 @@ class AnalyticsPermission(permissions.BasePermission):
         # Log to audit system
         log_user_action(
             user=request.user,
-            action_type=AuditActionType.ADMIN_ACCESS,
+            action_type=AuditActionType.ADMIN_ACTION,
             description=f'Analytics access granted for {request.path}',
             outcome='success',
             metadata={
@@ -207,7 +207,7 @@ class AnalyticsExportPermission(AnalyticsPermission):
             # Log to audit system
             log_user_action(
                 user=request.user,
-                action_type=AuditActionType.ADMIN_ACCESS,
+                action_type=AuditActionType.ADMIN_ACTION,
                 description=f'Analytics export requested: {request.path}',
                 outcome='initiated',
                 metadata={
