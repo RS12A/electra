@@ -2,6 +2,7 @@
 Base Django settings for electra_server project.
 """
 import os
+import sys
 import uuid
 from pathlib import Path
 from datetime import timedelta
@@ -48,7 +49,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'apps.auth_app',
+    'electra_server.apps.auth',
     'apps.health',
 ]
 
@@ -226,13 +227,20 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Email configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+# Email configuration with SMTP settings
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+
+# Support both EMAIL_* and SMTP_* variable names for flexibility
+EMAIL_HOST = env('SMTP_HOST', default=env('EMAIL_HOST', default='smtp.gmail.com'))
+EMAIL_PORT = env.int('SMTP_PORT', default=env.int('EMAIL_PORT', default=587))
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_HOST_USER = env('SMTP_USER', default=env('EMAIL_HOST_USER', default=''))
+EMAIL_HOST_PASSWORD = env('SMTP_PASS', default=env('EMAIL_HOST_PASSWORD', default=''))
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@electra.com')
+
+# Use mock backend for testing
+if 'test' in sys.argv or env.bool('USE_MOCK_EMAIL', default=False):
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
 # Logging configuration
 LOGGING = {
@@ -290,4 +298,4 @@ CACHES = {
 }
 
 # Custom user model
-AUTH_USER_MODEL = 'auth_app.User'
+AUTH_USER_MODEL = 'electra_auth.User'

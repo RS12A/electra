@@ -22,7 +22,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', include('apps.health.urls')),
-    path('api/auth/', include('apps.auth_app.urls')),
+    path('api/auth/', include('electra_server.apps.auth.urls')),
 ]
 
 # Serve media files in development
