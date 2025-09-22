@@ -53,6 +53,7 @@ LOCAL_APPS = [
     'electra_server.apps.elections',
     'electra_server.apps.ballots',
     'electra_server.apps.votes',
+    'electra_server.apps.audit',
     'apps.health',
 ]
 
