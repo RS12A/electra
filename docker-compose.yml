@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: electra_db
+    environment:
+      POSTGRES_DB: electra_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - electra_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: electra_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - electra_network
+
+  # Django Application (Development)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: electra_web
+    environment:
+      - DJANGO_SETTINGS_MODULE=electra_server.settings.dev
+      - DJANGO_DEBUG=True
+      - DJANGO_SECRET_KEY=dev-secret-key-change-in-production
+      - DATABASE_URL=postgresql://postgres:postgres123@db:5432/electra_db
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,web
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - logs_volume:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - electra_network
+
+  # Django Application (Production)
+  web-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: electra_web_prod
+    environment:
+      - DJANGO_SETTINGS_MODULE=electra_server.settings.prod
+      - DJANGO_DEBUG=False
+      # These should be set via .env file or environment
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-your_KEY_goes_here}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres123@db:5432/electra_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost}
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - logs_volume:/app/logs
+      - ./keys:/app/keys:ro  # Mount keys as read-only
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - electra_network
+    profiles:
+      - production
+
+  # Nginx (for production)
+  nginx:
+    image: nginx:alpine
+    container_name: electra_nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/sites-available/electra:/etc/nginx/sites-available/default:ro
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web-prod
+    networks:
+      - electra_network
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  static_volume:
+    driver: local
+  media_volume:
+    driver: local
+  logs_volume:
+    driver: local
+
+networks:
+  electra_network:
+    driver: bridge
