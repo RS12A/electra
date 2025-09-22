@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: electra_django_db
+    environment:
+      POSTGRES_DB: electra_server
+      POSTGRES_USER: electra_user
+      POSTGRES_PASSWORD: electra_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U electra_user -d electra_server"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - electra_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: electra_django_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - electra_network
+
+  web:
+    build:
+      context: .
+      dockerfile: electra_server/Dockerfile
+    container_name: electra_django_web
+    environment:
+      - DEBUG=False
+      - DJANGO_SETTINGS_MODULE=electra_server.settings.prod
+      - DATABASE_URL=postgresql://electra_user:electra_password@db:5432/electra_server
+      - REDIS_URL=redis://redis:6379/1
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-your_production_secret_key_here}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your_jwt_secret_here}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY:-your_jwt_refresh_secret_here}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+    volumes:
+      - ./electra_server/logs:/app/logs
+      - ./electra_server/media:/app/media
+      - ./electra_server/keys:/app/keys
+      - static_volume:/app/staticfiles
+    ports:
+      - "8001:8000"  # Different port to avoid conflicts
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        python manage.py seed_initial_data &&
+        gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile - electra_server.wsgi:application
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - electra_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+
+networks:
+  electra_network:
+    driver: bridge

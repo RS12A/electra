@@ -1,0 +1,69 @@
+# Django Backend Requirements for Electra Server
+# Production-grade Django voting system with security features
+
+# Core Django Framework
+Django==5.2.6
+djangorestframework==3.16.1
+
+# Database
+psycopg2-binary==2.9.10
+
+# Environment Configuration
+django-environ==0.12.0
+python-dotenv==1.1.1
+
+# Authentication & JWT
+djangorestframework-simplejwt==5.5.1
+PyJWT==2.7.0  # Already installed as system package
+
+# Password Security
+argon2-cffi==25.1.0
+
+# CORS Handling
+django-cors-headers==4.9.0
+
+# Static Files & Storage
+whitenoise==6.11.0
+
+# Logging
+python-json-logger==3.3.0
+
+# Testing Framework
+pytest==8.4.2
+pytest-django==4.11.1
+factory-boy==3.3.3
+
+# Development Tools
+django-extensions==4.1
+
+# System Monitoring (Optional)
+psutil==7.1.0
+
+# Additional Security
+cryptography>=41.0.0  # For RSA key operations
+
+# Production Server (Optional)
+gunicorn>=22.0.0
+uvicorn[standard]>=0.30.0  # For ASGI if needed
+
+# Caching (Optional)
+redis>=5.1.1
+django-redis>=5.4.0
+
+# File Storage (Optional - for cloud deployment)
+boto3>=1.35.0
+django-storages>=1.14.4
+
+# Email
+django-anymail>=12.0.0  # For production email services
+
+# Monitoring & Health Checks
+django-health-check>=3.18.3
+
+# Development & Debug Tools (dev only)
+django-debug-toolbar>=4.4.6
+django-silk>=5.1.0  # Performance profiling
+
+# API Documentation (optional)
+drf-spectacular>=0.27.2
+drf-spectacular[sidecar]>=0.27.2
