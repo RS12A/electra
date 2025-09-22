@@ -55,6 +55,7 @@ LOCAL_APPS = [
     'electra_server.apps.votes',
     'electra_server.apps.audit',
     'electra_server.apps.admin',
+    'electra_server.apps.analytics',
     'apps.health',
 ]
 
