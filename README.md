@@ -1,6 +1,23 @@
-# Electra Server - Secure Digital Voting System
+# Electra - Secure Digital Voting System
 
-A production-grade Django backend for the Electra voting system, built with security, scalability, and maintainability in mind. Features secure ballot token management, RSA cryptographic signatures, and offline voting capabilities.
+A complete production-grade digital voting platform with Django backend and Flutter frontend, built with security, scalability, and maintainability in mind. Features secure ballot token management, RSA cryptographic signatures, and offline voting capabilities.
+
+## 📱 **Flutter Frontend**
+
+The Electra Flutter app provides a modern, secure, and user-friendly interface for the digital voting system:
+
+- **🎨 KWASU Branding**: Custom theme with university colors and typography
+- **🔐 Secure Authentication**: Multi-format login (email, matric number, staff ID) with biometric support
+- **🗳️ Interactive Voting**: Step-by-step vote casting with candidate profiles and real-time validation
+- **📊 Admin Dashboard**: Comprehensive management interface for electoral committees
+- **📈 Analytics**: Real-time turnout metrics and exportable reports
+- **🔔 Notifications**: Push notifications for election updates and reminders
+- **💾 Offline Support**: Vote offline and sync when connectivity is restored
+- **📱 Responsive Design**: Optimized for both mobile and tablet devices
+
+[👉 **View Flutter Frontend Documentation**](./electra_flutter/README.md)
+
+## 🖥️ **Django Backend**
 
 ## Features
 
