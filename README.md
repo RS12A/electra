@@ -69,10 +69,10 @@ make generate-keys
 make setup-dev
 
 # Or manually with Docker Compose
-docker-compose build
-docker-compose up -d
-docker-compose exec web python manage.py migrate
-docker-compose exec web python manage.py seed_initial_data
+docker compose build
+docker compose up -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py seed_initial_data
 ```
 
 ### 4. Verify Installation
@@ -229,7 +229,7 @@ cp .env.example .env.production
 make setup-prod
 
 # Or manually
-docker-compose --profile production up -d
+docker compose --profile production up -d
 ```
 
 ### Environment Variables

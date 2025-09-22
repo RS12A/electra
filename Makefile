@@ -25,12 +25,12 @@ generate-keys: ## Generate RSA keys for JWT signing
 # Docker operations
 build: check-env ## Build Docker images
 	@echo "🏗️  Building Docker images..."
-	docker-compose build
+	docker compose build
 	@echo "✅ Docker images built successfully"
 
 up: check-env ## Start development environment
 	@echo "🚀 Starting development environment..."
-	docker-compose up -d
+	docker compose up -d
 	@echo "✅ Development environment started"
 	@echo "🌐 Web application: http://localhost:8000"
 	@echo "🗄️  Database: localhost:5432"
@@ -38,60 +38,60 @@ up: check-env ## Start development environment
 
 up-prod: check-env generate-keys ## Start production environment
 	@echo "🚀 Starting production environment..."
-	docker-compose --profile production up -d
+	docker compose --profile production up -d
 	@echo "✅ Production environment started"
 	@echo "🌐 Web application: http://localhost:80"
 
 down: ## Stop all services
 	@echo "🛑 Stopping all services..."
-	docker-compose down
+	docker compose down
 	@echo "✅ All services stopped"
 
 down-prod: ## Stop production services
 	@echo "🛑 Stopping production services..."
-	docker-compose --profile production down
+	docker compose --profile production down
 	@echo "✅ Production services stopped"
 
 logs: ## Show application logs
-	docker-compose logs -f web
+	docker compose logs -f web
 
 logs-prod: ## Show production logs
-	docker-compose logs -f web-prod
+	docker compose logs -f web-prod
 
 shell: ## Open shell in web container
-	docker-compose exec web bash
+	docker compose exec web bash
 
 shell-prod: ## Open shell in production web container
-	docker-compose exec web-prod bash
+	docker compose exec web-prod bash
 
 # Database operations
 migrate: ## Run database migrations
 	@echo "📊 Running database migrations..."
-	docker-compose exec web python manage.py migrate
+	docker compose exec web python manage.py migrate
 	@echo "✅ Database migrations completed"
 
 makemigrations: ## Create new database migrations
 	@echo "📊 Creating database migrations..."
-	docker-compose exec web python manage.py makemigrations
+	docker compose exec web python manage.py makemigrations
 	@echo "✅ Database migrations created"
 
 createsuperuser: ## Create Django superuser
 	@echo "👤 Creating superuser..."
-	docker-compose exec web python manage.py createsuperuser
+	docker compose exec web python manage.py createsuperuser
 	@echo "✅ Superuser created"
 
 seed: ## Seed initial development data
 	@echo "🌱 Seeding initial data..."
-	docker-compose exec web python manage.py seed_initial_data
+	docker compose exec web python manage.py seed_initial_data
 	@echo "✅ Initial data seeded"
 
 dbshell: ## Open database shell
-	docker-compose exec web python manage.py dbshell
+	docker compose exec web python manage.py dbshell
 
 # Testing
 test: ## Run tests
 	@echo "🧪 Running tests..."
-	docker-compose exec web python -m pytest --cov=apps --cov-report=html --cov-report=term
+	docker compose exec web python -m pytest --cov=apps --cov-report=html --cov-report=term
 	@echo "✅ Tests completed"
 
 test-local: ## Run tests locally (without Docker)
@@ -126,14 +126,14 @@ setup-prod: check-env build generate-keys up-prod migrate seed ## Complete produ
 # Maintenance
 clean: ## Clean up Docker resources
 	@echo "🧹 Cleaning up..."
-	docker-compose down -v --remove-orphans
+	docker compose down -v --remove-orphans
 	docker system prune -f
 	@echo "✅ Cleanup completed"
 
 backup-db: ## Backup database
 	@echo "💾 Creating database backup..."
 	mkdir -p backups
-	docker-compose exec -T db pg_dump -U postgres electra_db > backups/backup_$(shell date +%Y%m%d_%H%M%S).sql
+	docker compose exec -T db pg_dump -U postgres electra_db > backups/backup_$(shell date +%Y%m%d_%H%M%S).sql
 	@echo "✅ Database backup created in backups/"
 
 restore-db: ## Restore database from backup (usage: make restore-db BACKUP=backup_file.sql)
@@ -142,7 +142,7 @@ restore-db: ## Restore database from backup (usage: make restore-db BACKUP=backu
 		exit 1; \
 	fi
 	@echo "📂 Restoring database from $(BACKUP)..."
-	docker-compose exec -T db psql -U postgres -d electra_db < $(BACKUP)
+	docker compose exec -T db psql -U postgres -d electra_db < $(BACKUP)
 	@echo "✅ Database restored"
 
 # Security
@@ -170,13 +170,13 @@ migrate-local: ## Run migrations locally
 # Information
 status: ## Show status of all services
 	@echo "📊 Service status:"
-	docker-compose ps
+	docker compose ps
 
 info: ## Show system information
 	@echo "ℹ️  System Information:"
 	@echo "Docker version:"
 	@docker --version
 	@echo "Docker Compose version:"
-	@docker-compose --version
+	@docker compose version
 	@echo "Python version:"
 	@python --version || echo "Python not found in PATH"
