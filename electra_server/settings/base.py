@@ -54,6 +54,7 @@ LOCAL_APPS = [
     'electra_server.apps.ballots',
     'electra_server.apps.votes',
     'electra_server.apps.audit',
+    'electra_server.apps.admin',
     'apps.health',
 ]
 
@@ -162,6 +163,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'EXCEPTION_HANDLER': 'electra_server.exceptions.custom_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+        'admin_api': '100/hour',
+        'admin_api_sensitive': '30/hour'
+    }
 }
 
 # Simple JWT

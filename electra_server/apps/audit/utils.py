@@ -295,3 +295,74 @@ def log_system_event(
         metadata=metadata,
         error_details=error_details,
     )
+
+
+def log_admin_action(
+    admin_user: User,
+    action_type: str,
+    description: str,
+    target_user: Optional[User] = None,
+    target_election = None,
+    outcome: str = 'success',
+    metadata: Optional[Dict[str, Any]] = None,
+    error_details: str = '',
+) -> None:
+    """
+    Log administrative actions performed through admin APIs.
+    
+    This function provides a specialized logging interface for admin actions
+    with proper context and targeting information.
+    
+    Args:
+        admin_user: User performing the administrative action
+        action_type: Type of action from AuditActionType choices
+        description: Detailed description of the administrative action
+        target_user: User being acted upon (if applicable)
+        target_election: Election being acted upon (if applicable)
+        outcome: Outcome of the action ('success', 'failure', 'error', 'warning')
+        metadata: Additional contextual data
+        error_details: Error details if action failed
+    """
+    # Prepare metadata with admin context
+    admin_metadata = {
+        'admin_user_id': str(admin_user.id),
+        'admin_user_email': admin_user.email,
+        'admin_user_role': admin_user.role,
+        'is_admin_action': True,
+    }
+    
+    if metadata:
+        admin_metadata.update(metadata)
+    
+    # Determine target resource information
+    target_resource_type = ''
+    target_resource_id = ''
+    
+    if target_user:
+        target_resource_type = 'User'
+        target_resource_id = str(target_user.id)
+        admin_metadata['target_user_id'] = str(target_user.id)
+        admin_metadata['target_user_email'] = target_user.email
+    
+    if target_election:
+        if target_resource_type:
+            target_resource_type = 'Multiple'
+        else:
+            target_resource_type = 'Election'
+            target_resource_id = str(target_election.id)
+        admin_metadata['target_election_id'] = str(target_election.id)
+        admin_metadata['target_election_title'] = target_election.title
+    
+    # Log the admin action
+    log_user_action(
+        action_type=action_type,
+        description=f'[ADMIN] {description}',
+        request=None,
+        user=admin_user,
+        outcome=outcome,
+        election=target_election,
+        target_resource_type=target_resource_type,
+        target_resource_id=target_resource_id,
+        metadata=admin_metadata,
+        error_details=error_details,
+    )
