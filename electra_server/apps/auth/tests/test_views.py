@@ -363,7 +363,7 @@ class PasswordResetViewTest(APITestCase):
     """Test cases for password reset endpoints."""
     
     def setUp(self):
-        self.request_url = reverse('auth:password_reset_request')
+        self.request_url = reverse('auth:password_reset')
         self.confirm_url = reverse('auth:password_reset_confirm')
         self.user = StudentUserFactory(email='user@example.com')
     
