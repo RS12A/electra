@@ -90,7 +90,10 @@ WSGI_APPLICATION = 'electra_server.wsgi.application'
 
 # Database
 DATABASES = {
-    'default': env.db()
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Password validation
