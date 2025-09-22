@@ -51,6 +51,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'electra_server.apps.auth',
     'electra_server.apps.elections',
+    'electra_server.apps.ballots',
     'apps.health',
 ]
 

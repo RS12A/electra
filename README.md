@@ -1,17 +1,27 @@
-# Electra Server
+# Electra Server - Secure Digital Voting System
 
-A production-grade Django backend for the Electra voting system, built with security, scalability, and maintainability in mind.
+A production-grade Django backend for the Electra voting system, built with security, scalability, and maintainability in mind. Features secure ballot token management, RSA cryptographic signatures, and offline voting capabilities.
 
 ## Features
 
 🔐 **Security First**
 - JWT authentication with short-lived access tokens (15 minutes) and long-lived refresh tokens (7 days)
+- **RSA Cryptographic Ballot Tokens**: Each ballot token is cryptographically signed using 4096-bit RSA keys
 - Argon2 password hashing (production-grade security)
 - Role-based access control with proper validation
 - OTP-based password recovery with email verification
+- **Anti-Duplication**: Single-use tokens prevent double voting
+- **Comprehensive Audit Trail**: All ballot token operations are logged
 - Comprehensive security headers and CORS protection
 - Login attempt tracking and rate limiting
 - Request logging and monitoring
+
+🗳️ **Ballot Token System**
+- **Secure Token Issuance**: Cryptographically signed ballot tokens for eligible voters
+- **Token Validation**: Real-time verification of token signatures and validity
+- **Expiration Management**: Automatic token expiration and cleanup
+- **Offline Voting Support**: Tokens can be encrypted and stored for offline voting
+- **Secure Synchronization**: Encrypted vote data syncs back when connectivity is restored
 
 🏗️ **Production Ready**
 - Docker containerization
@@ -191,6 +201,90 @@ curl http://localhost:8000/api/health/
   - Elections cannot be modified during active voting period
   - Start/end times cannot be changed after election has started/ended
 
+### Ballot Token Management
+
+#### Core Ballot Token Operations
+- `POST /api/ballots/request-token/` - Generate and return signed ballot token for specific election
+- `POST /api/ballots/validate-token/` - Verify token signature and validity before casting vote
+- `GET /api/ballots/my-tokens/` - List current user's ballot tokens
+- `GET /api/ballots/tokens/<uuid:id>/` - Get specific ballot token details (owner/managers only)
+
+#### Offline Voting Support
+- `GET /api/ballots/offline-queue/` - List offline ballot queue entries
+- `POST /api/ballots/offline-submit/` - Submit offline ballot votes for synchronization
+
+#### Management & Monitoring (admin/electoral committee only)
+- `GET /api/ballots/stats/` - Get ballot token statistics and metrics
+- `GET /api/ballots/usage-logs/` - View audit trail of ballot token operations
+
+#### Ballot Token Features
+- **Single-Use Tokens**: Each voter gets one cryptographically signed token per election
+- **RSA Signatures**: 4096-bit RSA signatures for token verification
+- **Automatic Expiration**: Tokens expire 24 hours after issuance or at election end
+- **Offline Support**: Tokens can be queued and encrypted for offline voting
+- **Comprehensive Logging**: All token operations logged for audit trail
+- **Anti-Duplication**: Prevents multiple token requests for same election
+- **Real-time Validation**: Tokens verified against signatures and election status
+
+#### Ballot Token Request Example
+```bash
+# 1. Request ballot token (authenticated student/staff)
+curl -X POST http://localhost:8000/api/ballots/request-token/ \
+  -H "Authorization: Bearer <your-access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "election_id": "550e8400-e29b-41d4-a716-446655440000"
+  }'
+
+# Response includes signed token
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "token_uuid": "789e4567-e89b-12d3-a456-426614174001",
+  "signature": "abc123def456...",  // RSA signature hex
+  "status": "issued",
+  "election_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": "456e7890-e89b-12d3-a456-426614174002",
+  "issued_at": "2023-01-15T10:00:00Z",
+  "expires_at": "2023-01-16T10:00:00Z",
+  "is_valid": true,
+  "token_data": {
+    "token_uuid": "789e4567-e89b-12d3-a456-426614174001",
+    "user_id": "456e7890-e89b-12d3-a456-426614174002",
+    "election_id": "550e8400-e29b-41d4-a716-446655440000",
+    "issued_at": "2023-01-15T10:00:00Z",
+    "expires_at": "2023-01-16T10:00:00Z"
+  }
+}
+
+# 2. Validate ballot token before voting
+curl -X POST http://localhost:8000/api/ballots/validate-token/ \
+  -H "Authorization: Bearer <your-access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token_uuid": "789e4567-e89b-12d3-a456-426614174001",
+    "signature": "abc123def456...",
+    "election_id": "550e8400-e29b-41d4-a716-446655440000"
+  }'
+
+# Response confirms validity
+{
+  "valid": true,
+  "token": { /* token details */ },
+  "message": "Token is valid for voting."
+}
+
+# 3. Submit offline ballot (when connectivity restored)
+curl -X POST http://localhost:8000/api/ballots/offline-submit/ \
+  -H "Authorization: Bearer <your-access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ballot_token_uuid": "789e4567-e89b-12d3-a456-426614174001",
+    "encrypted_vote_data": "encrypted_ballot_data_here",
+    "signature": "offline_ballot_signature",
+    "submission_timestamp": "2023-01-15T15:30:00Z"
+  }'
+```
+
 ### Authentication Flow Example
 
 ```bash
@@ -347,6 +441,11 @@ tests/
 │   ├── test_permissions.py           # Election permission tests
 │   ├── test_views.py                 # Election API endpoint tests
 │   └── factories.py                  # Election test data factories
+├── electra_server/apps/ballots/tests/ # Ballot token system tests
+│   ├── test_models.py                # BallotToken, OfflineQueue, UsageLog tests
+│   ├── test_permissions.py           # Ballot token permission tests
+│   ├── test_views.py                 # Ballot token API endpoint tests
+│   └── factories.py                  # Ballot token test data factories
 └── apps/*/tests.py                   # Other app-specific tests
 ```
 
@@ -377,6 +476,21 @@ pytest electra_server/apps/elections/tests/test_permissions.py -v
 
 # Run tests with coverage
 pytest electra_server/apps/elections/tests/ --cov=electra_server.apps.elections --cov-report=html
+```
+
+### Running Ballot Token Tests
+
+```bash
+# Run all ballot token tests
+pytest electra_server/apps/ballots/tests/ -v
+
+# Run specific ballot token test modules
+pytest electra_server/apps/ballots/tests/test_models.py -v
+pytest electra_server/apps/ballots/tests/test_views.py -v
+pytest electra_server/apps/ballots/tests/test_permissions.py -v
+
+# Run tests with coverage
+pytest electra_server/apps/ballots/tests/ --cov=electra_server.apps.ballots --cov-report=html
 ```
 
 ### Writing Tests
@@ -549,6 +663,14 @@ electra/
 │   │       ├── admin.py       # Django admin for elections
 │   │       ├── urls.py        # Election URL patterns
 │   │       └── tests/         # Election test suite (models, views, permissions)
+│   │   └── ballots/          # Ballot token management module
+│   │       ├── models.py      # BallotToken, OfflineBallotQueue, UsageLog models
+│   │       ├── views.py       # Ballot token API views (request, validate, stats)
+│   │       ├── serializers.py # Ballot token CRUD and validation serializers
+│   │       ├── permissions.py # Ballot-specific permissions and security
+│   │       ├── admin.py       # Django admin for ballot management
+│   │       ├── urls.py        # Ballot API URL patterns
+│   │       └── tests/         # Ballot test suite (models, views, permissions)
 │   ├── middleware.py          # Custom middleware
 │   ├── logging.py             # JSON logging formatter
 │   └── exceptions.py          # Custom exception handlers
