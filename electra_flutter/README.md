@@ -2,9 +2,45 @@
 
 A production-grade Flutter frontend for the Electra secure digital voting system, built following Clean Architecture principles with KWASU university branding.
 
-## 🏗 Architecture
+## 🏗 Architecture - Admin Dashboard
 
-This Flutter application follows Clean Architecture principles with a feature-based modular structure:
+### **Clean Architecture Implementation**
+
+The admin dashboard follows Clean Architecture principles with complete separation of concerns:
+
+#### **Domain Layer** (`lib/features/admin_dashboard/domain/`)
+- **Entities**: Core business objects (User, Election, Candidate, BallotToken, DashboardStats)
+- **Repositories**: Abstract interfaces defining data operations contracts
+- **Use Cases**: Business logic implementation with validation and error handling
+
+#### **Data Layer** (`lib/features/admin_dashboard/data/`)
+- **Models**: Data transfer objects with JSON serialization capabilities
+- **Data Sources**: API service implementations for backend communication
+- **Repositories**: Concrete implementations of domain repository interfaces
+
+#### **Presentation Layer** (`lib/features/admin_dashboard/presentation/`)
+- **Pages**: Complete screen implementations with responsive layouts
+- **Widgets**: Reusable UI components following neomorphic design principles
+- **Providers**: Riverpod state management for reactive UI updates
+
+### **Key Architectural Features**
+- **Dependency Injection**: GetIt container for loose coupling and testability
+- **Error Handling**: Comprehensive failure types and graceful degradation
+- **Caching Strategy**: Local storage integration for offline functionality
+- **Security**: JWT token management with automatic refresh and secure storage
+
+### **Navigation Structure**
+```
+/login                           # Authentication entry point
+/dashboard                       # Admin dashboard home
+  ├── /elections                 # Election management
+  │   └── /:id                   # Individual election details
+  ├── /candidates                # Candidate management
+  │   └── /:id                   # Individual candidate details
+  ├── /users                     # User management
+  │   └── /:id                   # Individual user details
+  └── /audit                     # Audit logs and system monitoring
+```
 
 ```
 lib/
@@ -397,11 +433,42 @@ This comprehensive authentication system provides a secure, user-friendly, and a
 - Batch operations with progress indication
 - Secure local vote storage
 
-### 👔 **Admin Panel**
-- **Electoral Committee Dashboard**: System overview and election monitoring
-- **Election Management**: Create, edit, and manage elections
-- **User Management**: Role-based access control
-- **System Monitoring**: Health checks and audit logs
+### 👔 **Admin Dashboard**
+
+#### **Dashboard Home**
+- **System Overview**: Real-time statistics for users, elections, and votes
+- **Active Elections Monitoring**: Live election status with participation metrics
+- **Recent Activity Feed**: Real-time system activity and administrative actions
+- **System Alerts**: Important notifications and warnings for administrators
+- **Responsive Design**: Desktop navigation rail and mobile bottom navigation
+
+#### **Election Management**
+- **CRUD Operations**: Create, read, update, and delete elections
+- **Election Lifecycle**: Draft → Active → Completed workflow management
+- **Scheduling**: Start/end time configuration with validation
+- **Status Control**: Activate, pause, or close elections
+- **Participation Tracking**: Real-time vote counting and turnout metrics
+
+#### **User Management**  
+- **Role-based Access Control**: Student, Staff, Admin, Electoral Committee roles
+- **User CRUD Operations**: Create, view, update, and deactivate user accounts
+- **Bulk Operations**: Import/export user data with validation
+- **Activity Monitoring**: Track user login, registration, and voting activities
+- **Security Management**: Password resets and account security controls
+
+#### **Candidate Management**
+- **Candidate Profiles**: Complete candidate information with photos and videos
+- **Media Upload**: Secure cloud storage for candidate photos and campaign videos
+- **Election Assignment**: Link candidates to specific elections
+- **Profile Validation**: Ensure complete candidate information before election activation
+- **Vote Tracking**: Anonymous vote counting per candidate
+
+#### **Token & Vote Audit**
+- **Ballot Token Management**: View, track, and revoke ballot tokens
+- **Vote Verification**: Tamper-proof vote verification and audit trails
+- **Audit Logs**: Comprehensive logging of all administrative actions
+- **Security Monitoring**: Detect and respond to suspicious activities
+- **Data Export**: Generate reports for compliance and analysis
 
 ### 📊 **Analytics & Reporting**
 - **Real-time Analytics**: Turnout metrics and participation tracking
