@@ -1,22 +1,60 @@
 # Electra Flutter - Secure Digital Voting System
 
-A production-grade Flutter frontend for the Electra secure digital voting system, built following Clean Architecture principles with KWASU university branding.
+A production-grade Flutter frontend for the Electra secure digital voting system, built following Clean Architecture principles with KWASU university branding, featuring comprehensive notifications and timetable management.
 
-## 🏗 Architecture - Admin Dashboard
+## 🚀 Features
+
+### 🔔 **Notifications System**
+- **Push Notifications**: Firebase Cloud Messaging integration for election updates and reminders
+- **In-App Notifications**: Real-time notification center with read/unread status management
+- **Smart Filtering**: Filter by type (election, reminder, system, security, update, warning)
+- **Interactive Actions**: Quick actions like "View Election", "Mark All Read", or custom actions
+- **Offline Support**: Cached notifications with automatic sync when online
+- **Priority Levels**: Low, normal, high, and urgent notification priorities with visual indicators
+- **Search & Sort**: Full-text search and sorting by date, priority, or read status
+- **Neomorphic Design**: Modern UI with smooth animations and KWASU-branded transitions
+
+### 📅 **Timetable & Events**
+- **Event Calendar**: Interactive calendar view with event indicators and date selection
+- **Countdown Timers**: Real-time countdown displays for upcoming elections and deadlines
+- **Multiple Views**: Calendar grid, event list, and dedicated countdown timer views
+- **Event Types**: Elections, voting periods, deadlines, announcements, reminders, maintenance, training
+- **Offline-First**: Cached events with background synchronization capabilities
+- **Smart Filtering**: Filter by event type, status, date ranges, and election association
+- **Recurring Events**: Support for daily, weekly, monthly, and yearly recurring events
+- **Progress Tracking**: Visual progress indicators for ongoing events and voting periods
+
+## 🏗 Architecture
 
 ### **Clean Architecture Implementation**
 
-The admin dashboard follows Clean Architecture principles with complete separation of concerns:
+The Electra Flutter app follows Clean Architecture principles with complete separation of concerns across all features:
 
-#### **Domain Layer** (`lib/features/admin_dashboard/domain/`)
-- **Entities**: Core business objects (User, Election, Candidate, BallotToken, DashboardStats)
+#### **Domain Layer** (`lib/features/{feature}/domain/`)
+- **Entities**: Core business objects with validation and business logic
+  - `Notification`: Notification entity with priority levels, actions, and status tracking
+  - `Event`: Calendar event entity with countdown functionality and recurrence patterns
+  - `User`, `Election`, `Candidate`: Core voting system entities
 - **Repositories**: Abstract interfaces defining data operations contracts
 - **Use Cases**: Business logic implementation with validation and error handling
 
-#### **Data Layer** (`lib/features/admin_dashboard/data/`)
+#### **Data Layer** (`lib/features/{feature}/data/`)
 - **Models**: Data transfer objects with JSON serialization capabilities
-- **Data Sources**: API service implementations for backend communication
-- **Repositories**: Concrete implementations of domain repository interfaces
+- **Data Sources**: Local (Hive) and remote (API) data source implementations
+- **Repositories**: Concrete implementations with offline-first approach and caching
+
+#### **Presentation Layer** (`lib/features/{feature}/presentation/`)
+- **Pages**: Screen widgets with navigation and lifecycle management
+- **Widgets**: Reusable UI components with neomorphic design
+- **Providers**: Riverpod state management with reactive updates
+
+### **Core Infrastructure** (`lib/core/`)
+- **Dependency Injection**: GetIt service locator with Injectable code generation
+- **Network Layer**: Dio HTTP client with Retrofit type-safe API definitions
+- **Storage**: Hive local database and Flutter Secure Storage for sensitive data
+- **Theme**: KWASU-branded theme with neomorphic design system
+- **Error Handling**: Centralized failure classes and error mapping
+- **Routing**: GoRouter declarative navigation with route guards
 
 #### **Presentation Layer** (`lib/features/admin_dashboard/presentation/`)
 - **Pages**: Complete screen implementations with responsive layouts
