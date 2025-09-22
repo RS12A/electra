@@ -114,6 +114,17 @@ class ElectionCreateView(generics.CreateAPIView):
                 'endpoint': 'election_create'
             }
         )
+    
+    def create(self, request, *args, **kwargs):
+        """Create election and return detailed response."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # Return detailed election data instead of just create serializer data
+        election = serializer.instance
+        response_serializer = ElectionDetailSerializer(election)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ElectionUpdateView(generics.UpdateAPIView):
