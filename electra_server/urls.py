@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', include('apps.health.urls')),
     path('api/auth/', include('electra_server.apps.auth.urls')),
+    path('api/elections/', include('electra_server.apps.elections.urls')),
 ]
 
 # Serve media files in development
