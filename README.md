@@ -5,11 +5,13 @@ A production-grade Django backend for the Electra voting system, built with secu
 ## Features
 
 🔐 **Security First**
-- JWT authentication with RSA-256 signing
-- Argon2 password hashing
-- Comprehensive security headers
+- JWT authentication with short-lived access tokens (15 minutes) and long-lived refresh tokens (7 days)
+- Argon2 password hashing (production-grade security)
+- Role-based access control with proper validation
+- OTP-based password recovery with email verification
+- Comprehensive security headers and CORS protection
+- Login attempt tracking and rate limiting
 - Request logging and monitoring
-- Rate limiting and CORS protection
 
 🏗️ **Production Ready**
 - Docker containerization
@@ -29,6 +31,35 @@ A production-grade Django backend for the Electra voting system, built with secu
 - Request tracing with UUIDs
 - Performance monitoring
 - Health checks with service status
+
+## Authentication Features
+
+### User Roles & Registration
+- **Students**: Register with email, password, full name, and matriculation number
+- **Staff**: Register with email, password, full name, and staff ID  
+- **Candidates**: Can have either matriculation number or staff ID
+- **Administrators**: Full system access with staff ID
+- **Electoral Committee**: Election management permissions
+
+### Security Features
+- **JWT Tokens**: Short-lived access tokens (15 minutes) with long-lived refresh tokens (7 days)
+- **Password Security**: Argon2 hashing with configurable parameters
+- **Account Recovery**: Time-limited 6-digit OTP codes sent via email
+- **Login Tracking**: Comprehensive logging of all login attempts with IP addresses
+- **Rate Limiting**: Protection against brute force attacks
+- **Token Blacklisting**: Secure logout with token invalidation
+
+### Authentication Methods
+- Login with email address
+- Login with matriculation number (students)  
+- Login with staff ID (staff/admin)
+- Password recovery via email OTP
+- Profile management for authenticated users
+
+### Email Configuration
+- SMTP support for password recovery emails
+- Mock email backend for local development
+- Configurable email templates and settings
 
 ## Quick Start
 
@@ -91,16 +122,93 @@ curl http://localhost:8000/api/health/
 ### Health Check
 - `GET /api/health/` - System health and service status
 
-### Authentication
-- `POST /api/auth/register/` - User registration
-- `POST /api/auth/login/` - User login
-- `POST /api/auth/logout/` - User logout
-- `POST /api/auth/token/refresh/` - Refresh JWT token
-- `GET /api/auth/profile/` - Get user profile
-- `PUT /api/auth/profile/update/` - Update user profile
+### Authentication & User Management
 
-### Admin
-- `/admin/` - Django admin interface
+#### Core Authentication
+- `POST /api/auth/register/` - User registration (students: email, password, full_name, matric_number; staff: email, password, full_name, staff_id)  
+- `POST /api/auth/login/` - User login (identifier can be email, matric_number, or staff_id)
+- `POST /api/auth/logout/` - User logout (blacklists refresh token)
+- `POST /api/auth/token/refresh/` - Refresh JWT access token
+
+#### Password Recovery
+- `POST /api/auth/password-reset/` - Request password reset OTP (send 6-digit code via email)
+- `POST /api/auth/password-reset-confirm/` - Confirm password reset with OTP and set new password
+
+#### User Profile Management
+- `GET /api/auth/profile/` - Get current user profile
+- `PUT /api/auth/profile/` - Update user profile (authenticated users only)
+- `POST /api/auth/change-password/` - Change password (authenticated users only)
+- `GET /api/auth/login-history/` - View login history (authenticated users only)
+- `GET /api/auth/status/` - Check authentication status
+
+#### Admin & Management (admin/electoral committee only)
+- `GET /api/auth/users/` - List users with filtering and search
+- `GET /api/auth/users/<uuid:id>/` - Get user details by ID
+- `GET /api/auth/stats/` - Get user statistics and metrics
+
+### Admin Interface
+- `/admin/` - Django admin interface with comprehensive user management
+
+### Authentication Flow Example
+
+```bash
+# 1. Register a student
+curl -X POST http://localhost:8000/api/auth/register/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "student@university.edu",
+    "password": "securepassword123",
+    "password_confirm": "securepassword123", 
+    "full_name": "John Student",
+    "matric_number": "MAT12345",
+    "role": "student"
+  }'
+
+# 2. Login with email or matric number
+curl -X POST http://localhost:8000/api/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "identifier": "MAT12345",
+    "password": "securepassword123"
+  }'
+
+# 3. Use access token for authenticated requests
+curl -X GET http://localhost:8000/api/auth/profile/ \
+  -H "Authorization: Bearer <your-access-token>"
+
+# 4. Refresh token when access token expires
+curl -X POST http://localhost:8000/api/auth/token/refresh/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh": "<your-refresh-token>"
+  }'
+
+# 5. Reset password if forgotten
+# Step 1: Request OTP
+curl -X POST http://localhost:8000/api/auth/password-reset/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "student@university.edu"
+  }'
+
+# Step 2: Confirm with OTP and new password
+curl -X POST http://localhost:8000/api/auth/password-reset-confirm/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "student@university.edu",
+    "otp_code": "123456",
+    "new_password": "newpassword123",
+    "new_password_confirm": "newpassword123"
+  }'
+
+# 6. Logout (blacklist refresh token)
+curl -X POST http://localhost:8000/api/auth/logout/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-access-token>" \
+  -d '{
+    "refresh": "<your-refresh-token>"
+  }'
+```
 
 ## Development
 
@@ -184,32 +292,100 @@ pytest --cov=apps --cov-report=html
 
 ### Test Structure
 
-- `tests/test_health.py` - Health endpoint tests
-- `tests/test_auth.py` - Authentication tests
-- `apps/*/tests.py` - App-specific tests
+```
+tests/
+├── test_health.py                    # Health endpoint tests
+├── electra_server/apps/auth/tests/   # Authentication module tests
+│   ├── test_models.py               # User, OTP, LoginAttempt model tests
+│   ├── test_permissions.py          # Role-based permission tests  
+│   ├── test_views.py                # API endpoint tests
+│   └── factories.py                 # Test data factories
+└── apps/*/tests.py                  # Other app-specific tests
+```
+
+### Running Authentication Tests
+
+```bash
+# Run all authentication tests
+pytest electra_server/apps/auth/tests/ -v
+
+# Run specific test modules
+pytest electra_server/apps/auth/tests/test_views.py -v
+pytest electra_server/apps/auth/tests/test_models.py -v
+
+# Run tests with coverage
+pytest electra_server/apps/auth/tests/ --cov=electra_server.apps.auth --cov-report=html
+```
 
 ### Writing Tests
 
 ```python
-# Example test
+# Example authentication test
 from django.test import TestCase
 from rest_framework.test import APITestCase
-from django.contrib.auth import get_user_model
+from electra_server.apps.auth.models import User, UserRole
+from electra_server.apps.auth.tests.factories import UserFactory
 
-User = get_user_model()
-
-class MyTest(APITestCase):
+class AuthenticationTest(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username='test',
-            email='test@electra.com',
-            password='testpass123',
-            matric_staff_id='U1234567'
+        # Create test student user
+        self.student = UserFactory(
+            email='student@test.com',
+            role=UserRole.STUDENT,
+            matric_number='STU001'
+        )
+        
+        # Create test staff user  
+        self.staff = UserFactory(
+            email='staff@test.com', 
+            role=UserRole.STAFF,
+            staff_id='STF001'
         )
     
-    def test_something(self):
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get('/api/endpoint/')
+    def test_student_registration(self):
+        """Test student can register with matric number."""
+        data = {
+            'email': 'newstudent@test.com',
+            'password': 'testpass123',
+            'password_confirm': 'testpass123',
+            'full_name': 'New Student',
+            'matric_number': 'STU002',
+            'role': 'student'
+        }
+        response = self.client.post('/api/auth/register/', data)
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('tokens', response.data)
+        self.assertEqual(response.data['user']['role'], 'student')
+    
+    def test_login_with_matric_number(self):
+        """Test student can login with matriculation number."""
+        data = {
+            'identifier': 'STU001', 
+            'password': 'testpass123'
+        }
+        response = self.client.post('/api/auth/login/', data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('tokens', response.data)
+    
+    def test_password_reset_flow(self):
+        """Test complete password reset flow."""
+        # Request OTP
+        data = {'email': 'student@test.com'}
+        response = self.client.post('/api/auth/password-reset/', data)
+        self.assertEqual(response.status_code, 200)
+        
+        # Get OTP from database  
+        from electra_server.apps.auth.models import PasswordResetOTP
+        otp = PasswordResetOTP.objects.get(user=self.student)
+        
+        # Confirm password reset
+        data = {
+            'email': 'student@test.com',
+            'otp_code': otp.otp_code,
+            'new_password': 'newpass123',
+            'new_password_confirm': 'newpass123'
+        }
+        response = self.client.post('/api/auth/password-reset-confirm/', data)
         self.assertEqual(response.status_code, 200)
 ```
 
@@ -234,19 +410,38 @@ docker compose --profile production up -d
 
 ### Environment Variables
 
+#### Required Configuration
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `DJANGO_SECRET_KEY` | Django secret key | Yes |
 | `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `REDIS_URL` | Redis connection string | Yes |
 | `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts | Yes |
-| `EMAIL_HOST_USER` | SMTP username | Yes |
-| `EMAIL_HOST_PASSWORD` | SMTP password | Yes |
-| `RSA_PRIVATE_KEY_PATH` | Path to RSA private key | Yes |
-| `RSA_PUBLIC_KEY_PATH` | Path to RSA public key | Yes |
-| `ADMIN_USERNAME` | Default admin username | No |
-| `ADMIN_EMAIL` | Default admin email | No |
-| `ADMIN_PASSWORD` | Default admin password | No |
+
+#### Authentication & Security
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `JWT_ACCESS_TOKEN_LIFETIME` | Access token lifetime (seconds) | 900 (15 min) |
+| `JWT_REFRESH_TOKEN_LIFETIME` | Refresh token lifetime (seconds) | 604800 (7 days) |
+| `RSA_PRIVATE_KEY_PATH` | Path to RSA private key | keys/private_key.pem |
+| `RSA_PUBLIC_KEY_PATH` | Path to RSA public key | keys/public_key.pem |
+
+#### Email Configuration (SMTP)  
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `SMTP_HOST` | SMTP server hostname | Yes |
+| `SMTP_PORT` | SMTP server port | Yes |
+| `SMTP_USER` | SMTP username | Yes |
+| `SMTP_PASS` | SMTP password | Yes |
+| `DEFAULT_FROM_EMAIL` | Default from email address | Yes |
+| `USE_MOCK_EMAIL` | Use mock backend for development | No (False) |
+
+#### Optional Configuration
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `REDIS_URL` | Redis connection string | redis://localhost:6379/0 |
+| `ADMIN_USERNAME` | Default admin username | admin |
+| `ADMIN_EMAIL` | Default admin email | admin@electra.com |
+| `ADMIN_PASSWORD` | Default admin password | - |
 
 ### Production Checklist
 
@@ -269,29 +464,38 @@ See [security.md](security.md) for detailed security hardening steps.
 
 ```
 electra/
-├── electra_server/          # Django project
-│   ├── settings/           # Split settings
-│   │   ├── base.py        # Base settings
-│   │   ├── dev.py         # Development settings
-│   │   └── prod.py        # Production settings
-│   ├── middleware.py      # Custom middleware
-│   ├── logging.py         # JSON logging formatter
-│   └── exceptions.py      # Custom exception handlers
-├── apps/                  # Django applications
-│   ├── auth_app/         # Authentication
-│   └── health/           # Health checks
-├── tests/                # Test suite
-├── scripts/              # Utility scripts
-├── keys/                 # RSA keys (not committed)
-├── logs/                 # Application logs
-├── static/               # Static files
-├── media/                # Media files
-├── docker-compose.yml    # Docker services
-├── Dockerfile           # Application container
-├── Makefile            # Development commands
-├── requirements.txt    # Python dependencies
-├── .env.example       # Environment template
-└── README.md         # This file
+├── electra_server/              # Django project
+│   ├── settings/               # Split settings
+│   │   ├── base.py            # Base settings
+│   │   ├── dev.py             # Development settings  
+│   │   └── prod.py            # Production settings
+│   ├── apps/                  # Django applications
+│   │   └── auth/              # Authentication module
+│   │       ├── models.py      # User, OTP, LoginAttempt models
+│   │       ├── views.py       # Authentication API views
+│   │       ├── serializers.py # DRF serializers
+│   │       ├── permissions.py # Role-based permissions
+│   │       ├── managers.py    # Custom model managers
+│   │       ├── admin.py       # Django admin integration
+│   │       ├── urls.py        # Authentication URL patterns
+│   │       └── tests/         # Comprehensive test suite
+│   ├── middleware.py          # Custom middleware
+│   ├── logging.py             # JSON logging formatter
+│   └── exceptions.py          # Custom exception handlers
+├── apps/                      # Additional Django apps
+│   └── health/                # Health check endpoints
+├── tests/                     # Integration tests
+├── scripts/                   # Utility scripts
+├── keys/                      # RSA keys (not committed)
+├── logs/                      # Application logs
+├── static/                    # Static files
+├── media/                     # Media files
+├── docker-compose.yml         # Docker services
+├── Dockerfile                 # Application container
+├── Makefile                   # Development commands
+├── requirements.txt           # Python dependencies
+├── .env.example              # Environment template
+└── README.md                 # This file
 ```
 
 ### Technology Stack
@@ -382,14 +586,41 @@ make migrate
 
 **Authentication errors**
 ```bash
-# Check RSA keys exist
-ls -la keys/
+# Check JWT token configuration
+python manage.py shell -c "
+from django.conf import settings
+print('Access token lifetime:', settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'])
+print('Refresh token lifetime:', settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'])
+"
 
-# Regenerate keys if missing
-make generate-keys
+# Test authentication endpoints
+curl -X POST http://localhost:8000/api/auth/register/ \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"test123","password_confirm":"test123","full_name":"Test User","matric_number":"T001","role":"student"}'
 
-# Restart application
-docker-compose restart web
+# Check user creation
+python manage.py shell -c "
+from electra_server.apps.auth.models import User
+print('Total users:', User.objects.count())
+print('Users:', list(User.objects.values('email', 'role')))
+"
+```
+
+**Email/OTP issues**
+```bash
+# Check email backend configuration
+python manage.py shell -c "
+from django.conf import settings
+print('Email backend:', settings.EMAIL_BACKEND)  
+print('SMTP settings:', settings.EMAIL_HOST, settings.EMAIL_PORT)
+print('Use mock email:', getattr(settings, 'USE_MOCK_EMAIL', False))
+"
+
+# Test password reset OTP creation
+python manage.py shell -c "
+from electra_server.apps.auth.models import PasswordResetOTP
+print('Active OTPs:', PasswordResetOTP.objects.filter(is_used=False).count())
+"
 ```
 
 **Permission errors in Docker**
