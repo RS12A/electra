@@ -164,6 +164,62 @@ curl http://localhost:8000/api/health/
 - `GET /api/auth/users/<uuid:id>/` - Get user details by ID
 - `GET /api/auth/stats/` - Get user statistics and metrics
 
+### Admin API
+The Admin API provides comprehensive administrative functionality for managing users, elections, and ballot tokens. All endpoints require authentication and admin or electoral committee privileges.
+
+#### Access Control
+- **Roles**: Only `admin` and `electoral_committee` roles have access
+- **Rate Limiting**: 100 requests/hour general, 30 requests/hour for sensitive operations
+- **Audit Logging**: All administrative actions are comprehensively logged
+- **Security**: TLS 1.3 enforced, IP tracking, user agent logging
+
+#### User Management
+- `GET /api/admin/users/` - List all users with filtering and search
+  - Query Parameters: `role`, `is_active`, `search`
+- `GET /api/admin/users/{id}/` - Get detailed user information
+- `POST /api/admin/users/` - Create new user account
+- `PUT /api/admin/users/{id}/` - Update user account
+- `PATCH /api/admin/users/{id}/` - Partial update user account
+- `DELETE /api/admin/users/{id}/` - Delete user account (audit trail preserved)
+- `POST /api/admin/users/{id}/activate/` - Activate user account
+- `POST /api/admin/users/{id}/deactivate/` - Deactivate user account
+
+#### Election Management
+- `GET /api/admin/elections/` - List all elections with filtering
+  - Query Parameters: `status`, `created_by`, `search`
+- `GET /api/admin/elections/{id}/` - Get detailed election information
+- `POST /api/admin/elections/` - Create new election
+- `PUT /api/admin/elections/{id}/` - Update election
+- `PATCH /api/admin/elections/{id}/` - Partial update election
+- `DELETE /api/admin/elections/{id}/` - Delete election (non-active only)
+- `POST /api/admin/elections/{id}/activate/` - Activate election
+- `POST /api/admin/elections/{id}/close/` - Close/complete election
+- `POST /api/admin/elections/{id}/cancel/` - Cancel election
+
+#### Ballot Token Management
+- `GET /api/admin/ballots/` - List all ballot tokens with filtering
+  - Query Parameters: `status`, `election`, `user`, `is_valid`, `search`
+- `GET /api/admin/ballots/{id}/` - Get detailed ballot token information
+- `POST /api/admin/ballots/{id}/revoke/` - Revoke ballot token
+  - Request Body: `{"reason": "Revocation reason"}`
+
+#### System Dashboard
+- `GET /api/admin/dashboard/` - Get system statistics and overview
+  - Returns user statistics, election statistics, ballot token metrics
+  - Provides real-time system health information
+
+#### Candidate Management
+- `GET /api/admin/candidates/` - Placeholder for candidate management
+  - **Note**: Full implementation pending candidate model availability
+
+#### Security Features
+- **Comprehensive Audit Logging**: All admin actions logged with full context
+- **Role-based Permissions**: Granular permissions for different admin operations
+- **Rate Limiting**: Tiered throttling for normal vs sensitive operations
+- **IP Tracking**: All requests logged with client IP and user agent
+- **Data Validation**: Extensive validation with security-conscious defaults
+- **Safe Operations**: Prevents dangerous operations (e.g., deleting own account)
+
 ### Admin Interface
 - `/admin/` - Django admin interface with comprehensive user management
 
