@@ -317,11 +317,85 @@ This comprehensive authentication system provides a secure, user-friendly, and a
 - **Encrypted Storage**: AES-256 encryption for sensitive data
 
 ### 🗳️ **Voting System**
-- **Interactive Dashboard**: View active elections and voting status
-- **Secure Vote Casting**: Multi-position election support with candidate profiles
+- **Interactive Dashboard**: View active elections and voting status with neomorphic design
+- **Candidate Listing**: Browse candidates with photos, manifestos, and optional campaign videos
+- **Secure Vote Casting**: Multi-step voting process with encrypted ballot submission
+- **Vote Confirmation**: Success screen with anonymous vote token for verification
 - **Vote Verification**: Anonymous vote verification using cryptographic tokens
 - **Offline Voting**: Cast votes offline with automatic sync when online
 - **Real-time Updates**: Live election status and countdown timers
+
+#### Voting Screens
+
+##### 1. Voting Dashboard (`VotingDashboardPage`)
+- **Welcome Section**: KWASU-branded welcome with security features overview
+- **Active Elections**: List of ongoing and upcoming elections with status indicators
+- **Election Cards**: Detailed election information with candidate counts and timing
+- **Offline Votes Access**: Quick access to manage queued offline votes
+- **Responsive Design**: Adapts to different screen sizes and orientations
+
+**Features**:
+- Neomorphic design with smooth animations
+- Real-time election countdown timers
+- Accessibility support with semantic labels
+- Pull-to-refresh functionality
+- KWASU branding with university colors
+
+##### 2. Candidate Listing (`CandidateListingPage`)
+- **Election Information**: Comprehensive election details with timing and status
+- **Candidate Cards**: Expandable cards with candidate photos, manifestos, and videos
+- **Interactive Elements**: Smooth expand/collapse animations for detailed view
+- **Vote Button**: Direct access to vote casting for each candidate
+- **Loading States**: Elegant loading and error states with retry functionality
+
+**Features**:
+- Cached network images for candidate photos
+- Expandable candidate information sections
+- Video preview indicators for campaign videos
+- Staggered animations for candidate cards
+- Full accessibility support
+
+##### 3. Vote Casting (`VoteCastingPage`)
+- **Vote Confirmation**: Detailed review of selected candidate before submission
+- **Security Information**: Clear explanation of encryption and anonymity features
+- **Visual Feedback**: Candidate photo and information display
+- **Privacy Notice**: Explanation of vote anonymity and security measures
+- **Loading Overlay**: Progress indication during vote encryption and submission
+
+**Features**:
+- End-to-end encryption visualization
+- Ballot token validation before vote casting
+- Automatic fallback to offline mode if network fails
+- Scale animations for visual feedback
+- Comprehensive security feature explanations
+
+##### 4. Vote Confirmation (`VoteConfirmationPage`)
+- **Success Animation**: Animated success indicator with pulse effects
+- **Vote Summary**: Complete details of cast vote without compromising anonymity
+- **Vote Token**: Anonymous token for later vote verification with copy functionality
+- **Return Navigation**: Seamless return to dashboard with state cleanup
+- **Verification Options**: Direct access to vote verification features
+
+**Features**:
+- Animated success sequences with elastic animations
+- Vote token clipboard integration
+- Offline vote queueing confirmation
+- Thank you messaging with next election countdown
+- Prevents accidental back navigation
+
+##### 5. Offline Votes Management (`OfflineVotesPage`)
+- **Queue Overview**: Display all offline votes waiting for submission
+- **Submission Control**: Batch submit all offline votes when online
+- **Status Tracking**: Individual vote status with error details
+- **Queue Management**: Clear queue with confirmation dialogs
+- **Sync Progress**: Real-time feedback during vote submission
+
+**Features**:
+- Detailed offline vote information
+- Retry mechanisms for failed submissions
+- Sync attempt tracking and error reporting
+- Batch operations with progress indication
+- Secure local vote storage
 
 ### 👔 **Admin Panel**
 - **Electoral Committee Dashboard**: System overview and election monitoring
@@ -405,6 +479,51 @@ The app features a modern, responsive design optimized for both mobile and table
 
 ## 🧪 Testing
 
+The voting system includes comprehensive test coverage across all layers:
+
+### Test Structure
+
+```
+test/
+├── unit/                     # Unit tests
+│   ├── voting/              # Voting use cases and domain logic
+│   ├── auth/                # Authentication use cases
+│   └── core/                # Core services
+├── widget/                  # Widget tests  
+│   ├── voting/              # Voting screens and components
+│   ├── auth/                # Authentication screens
+│   └── shared/              # Shared widgets
+├── integration/             # Integration tests
+│   ├── voting/              # End-to-end voting flows
+│   └── auth/                # End-to-end auth flows
+└── helpers/                 # Test utilities and mocks
+```
+
+### Voting System Tests
+
+#### Unit Tests
+- **Use Cases**: Complete testing of all voting use cases
+  - `GetCandidatesUseCase`: Election and candidate data retrieval
+  - `CastVoteUseCase`: Vote casting with validation and encryption
+  - `VerifyVoteUseCase`: Anonymous vote verification
+  - `QueueOfflineVoteUseCase`: Offline vote management
+- **Repository**: Mock testing with various error scenarios
+- **Security**: Encryption and token validation testing
+
+#### Widget Tests
+- **Candidate Listing**: UI interactions and data display
+- **Vote Casting**: Form validation and user interactions
+- **Vote Confirmation**: Success states and token management
+- **Offline Votes**: Queue management and submission testing
+- **Accessibility**: Screen reader and keyboard navigation testing
+
+#### Integration Tests
+- **Complete Voting Flow**: Dashboard → Candidate Selection → Vote Casting → Confirmation
+- **Offline Scenarios**: Network failure handling and vote queueing
+- **Error Handling**: Network errors, validation failures, and recovery
+- **Accessibility**: End-to-end accessibility testing
+- **State Persistence**: Vote token storage and retrieval
+
 ### Running Tests
 
 ```bash
@@ -420,23 +539,18 @@ flutter test test/widget/
 # Run integration tests
 flutter test test/integration/
 
+# Run specific test file
+flutter test test/unit/voting/voting_usecases_test.dart
+
 # Run tests with coverage
 flutter test --coverage
-```
 
-### Test Structure
+# Generate HTML coverage report
+genhtml coverage/lcov.info -o coverage/html
+open coverage/html/index.html
 
-```
-test/
-├── unit/                     # Unit tests
-│   ├── auth/                # Authentication use cases
-│   └── core/                # Core services
-├── widget/                  # Widget tests  
-│   ├── auth/                # Authentication screens
-│   └── shared/              # Shared widgets
-├── integration/             # Integration tests
-│   └── auth/                # End-to-end auth flows
-└── helpers/                 # Test utilities
+# Generate mocks for testing
+flutter packages pub run build_runner build
 ```
 
 ### Authentication Testing
