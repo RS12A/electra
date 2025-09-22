@@ -32,6 +32,10 @@ from .serializers import (
 )
 from .permissions import IsAuthenticated, IsOwner, IsElectionManager
 
+# Import audit logging utilities
+from electra_server.apps.audit.utils import log_authentication_event
+from electra_server.apps.audit.models import AuditActionType
+
 logger = logging.getLogger(__name__)
 
 
@@ -202,6 +206,19 @@ class UserLoginView(APIView):
                     }
                 )
                 
+                # Add audit log entry for successful login
+                log_authentication_event(
+                    action_type=AuditActionType.USER_LOGIN,
+                    user=user,
+                    request=request,
+                    outcome='success',
+                    metadata={
+                        'login_method': 'password',
+                        'user_role': user.role,
+                        'login_identifier': identifier,
+                    }
+                )
+                
                 return Response(response_data, status=status.HTTP_200_OK)
                 
             except Exception as e:
@@ -214,6 +231,19 @@ class UserLoginView(APIView):
                     user_agent=user_agent,
                     success=False,
                     failure_reason='Internal error'
+                )
+                
+                # Add audit log entry for internal error during login
+                log_authentication_event(
+                    action_type=AuditActionType.SYSTEM_ERROR,
+                    user=user,
+                    request=request,
+                    outcome='error',
+                    error_details=str(e),
+                    metadata={
+                        'error_type': 'login_processing_error',
+                        'attempted_identifier': identifier,
+                    }
                 )
                 
                 return Response(
@@ -240,6 +270,19 @@ class UserLoginView(APIView):
                 'identifier': identifier,
                 'ip_address': ip_address,
                 'errors': serializer.errors
+            }
+        )
+        
+        # Add audit log entry for failed login
+        log_authentication_event(
+            action_type=AuditActionType.USER_LOGIN_FAILED,
+            user=None,  # No user object for failed login
+            request=request,
+            outcome='failure',
+            error_details='Invalid credentials provided',
+            metadata={
+                'attempted_identifier': identifier,
+                'validation_errors': serializer.errors,
             }
         )
         
@@ -284,6 +327,18 @@ class UserLogoutView(APIView):
                         'user_id': str(request.user.id),
                         'email': request.user.email,
                         'ip_address': get_client_ip(request)
+                    }
+                )
+                
+                # Add audit log entry for successful logout
+                log_authentication_event(
+                    action_type=AuditActionType.USER_LOGOUT,
+                    user=request.user,
+                    request=request,
+                    outcome='success',
+                    metadata={
+                        'logout_method': 'token_blacklist',
+                        'user_role': request.user.role,
                     }
                 )
                 

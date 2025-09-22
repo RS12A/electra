@@ -697,6 +697,275 @@ class AuthenticationTest(APITestCase):
         self.assertEqual(response.status_code, 200)
 ```
 
+## Audit Logging System
+
+Electra includes a comprehensive, tamper-proof audit logging system with blockchain-style hash chaining and RSA digital signatures. This system provides complete traceability of all critical actions while maintaining ballot secrecy.
+
+### Audit System Features
+
+- **Blockchain-style Chain Integrity**: Each audit entry contains SHA-512 hash of previous entry, creating tamper-evident chain
+- **RSA Digital Signatures**: Every audit entry is cryptographically signed with 4096-bit RSA keys
+- **Immutable Records**: Once created, audit entries cannot be modified or deleted
+- **Comprehensive Coverage**: Logs authentication, election management, token issuance, and voting activities
+- **Anonymous Vote Logging**: Vote activities logged without compromising ballot secrecy
+- **Real-time Verification**: API endpoints for chain integrity verification
+- **Role-based Access**: Admin and electoral committee access only
+- **Production Security**: TLS 1.3 enforcement, tamper detection, and security middleware
+
+### Audit API Endpoints
+
+All audit endpoints require admin or electoral committee authentication and enforce HTTPS in production.
+
+#### List Audit Logs
+```bash
+# List all audit entries (paginated)
+curl -X GET "https://electra.example.com/api/audit/logs/" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Accept: application/json"
+
+# Filter by action type
+curl -X GET "https://electra.example.com/api/audit/logs/?action_type=user_login" \
+  -H "Authorization: Bearer <admin-token>"
+
+# Filter by date range
+curl -X GET "https://electra.example.com/api/audit/logs/?start_date=2024-01-01&end_date=2024-12-31" \
+  -H "Authorization: Bearer <admin-token>"
+
+# Filter by user
+curl -X GET "https://electra.example.com/api/audit/logs/?user_id=<user-uuid>" \
+  -H "Authorization: Bearer <admin-token>"
+
+# Filter by election
+curl -X GET "https://electra.example.com/api/audit/logs/?election_id=<election-uuid>" \
+  -H "Authorization: Bearer <admin-token>"
+
+# Get detailed entries
+curl -X GET "https://electra.example.com/api/audit/logs/?detailed=true" \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+#### Get Audit Log Details
+```bash
+# Get specific audit entry with verification status
+curl -X GET "https://electra.example.com/api/audit/logs/<audit-id>/" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Accept: application/json"
+```
+
+#### Verify Audit Chain Integrity
+```bash
+# Quick verification (last 24 hours)
+curl -X POST "https://electra.example.com/api/audit/verify/" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quick_verify": true
+  }'
+
+# Full chain verification
+curl -X POST "https://electra.example.com/api/audit/verify/" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quick_verify": false
+  }'
+
+# Verify specific range
+curl -X POST "https://electra.example.com/api/audit/verify/" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_position": 1,
+    "end_position": 100
+  }'
+```
+
+#### Get Audit Statistics
+```bash
+# Get audit activity statistics
+curl -X GET "https://electra.example.com/api/audit/stats/" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Accept: application/json"
+```
+
+#### Get Action Types
+```bash
+# Get available action types for filtering
+curl -X GET "https://electra.example.com/api/audit/action-types/" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Accept: application/json"
+```
+
+### Audited Actions
+
+The system automatically logs the following critical actions:
+
+#### Authentication Events
+- `user_login` - Successful user login
+- `user_logout` - User logout  
+- `user_login_failed` - Failed login attempt
+- `user_password_reset` - Password reset action
+
+#### Election Management
+- `election_created` - New election created
+- `election_updated` - Election details modified
+- `election_activated` - Election status changed to active
+- `election_completed` - Election status changed to completed
+- `election_cancelled` - Election cancelled
+
+#### Ballot Token Management
+- `token_issued` - Ballot token issued to user
+- `token_validated` - Ballot token validated for voting
+- `token_invalidated` - Ballot token invalidated
+
+#### Voting Activities
+- `vote_cast` - Vote successfully cast (anonymous)
+- `vote_verified` - Vote verification performed
+- `vote_failed` - Vote casting failed
+
+#### System Events
+- `admin_action` - Administrative action performed
+- `system_error` - System error or security violation
+
+### Chain Verification Process
+
+The audit system uses blockchain-style integrity verification:
+
+1. **Hash Chaining**: Each entry contains SHA-512 hash of previous entry
+2. **Content Hashing**: SHA-512 hash of entry content for tamper detection
+3. **RSA Signatures**: 4096-bit RSA signatures on entry metadata
+4. **Position Tracking**: Sequential chain position numbers prevent insertion attacks
+5. **Immutability**: Entries sealed after creation, cannot be modified
+
+#### Example Verification Response
+```json
+{
+  "is_valid": true,
+  "total_entries": 1250,
+  "verified_entries": 1250,
+  "failed_entries": [],
+  "chain_breaks": [],
+  "signature_failures": [],
+  "verification_timestamp": "2024-03-15T10:30:00Z",
+  "verified_by": "admin@electra.com"
+}
+```
+
+### Security Features
+
+#### TLS 1.3 Enforcement
+- All audit endpoints require HTTPS in production
+- TLS 1.3 preferred for enhanced security
+- Security headers added to responses
+
+#### Tamper Detection
+- Monitors for injection attempts on audit endpoints
+- Blocks suspicious patterns (SQL injection, XSS, path traversal)
+- Logs security violations with detailed context
+- Rate limiting preparation
+
+#### Access Control
+- Admin and electoral committee roles only
+- Request logging with IP address and user agent tracking
+- Session-based access monitoring
+
+### Production Deployment
+
+#### RSA Key Management
+```bash
+# Generate production RSA keys (4096-bit)
+python scripts/generate_rsa_keys.py --key-size 4096 --output-dir /secure/keys/
+
+# Set environment variables
+export RSA_PRIVATE_KEY_PATH=/secure/keys/private_key.pem
+export RSA_PUBLIC_KEY_PATH=/secure/keys/public_key.pem
+
+# Secure key file permissions
+chmod 600 /secure/keys/private_key.pem
+chmod 644 /secure/keys/public_key.pem
+```
+
+#### Database Configuration
+```bash
+# Run audit migrations
+python manage.py migrate audit
+
+# Create audit indexes for performance
+python manage.py dbshell << EOF
+CREATE INDEX CONCURRENTLY IF NOT EXISTS audit_log_timestamp_desc ON audit_log(timestamp DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS audit_log_chain_position_asc ON audit_log(chain_position ASC);
+EOF
+```
+
+#### Monitoring Setup
+```bash
+# Monitor chain integrity (daily cron job)
+python manage.py shell << EOF
+from electra_server.apps.audit.models import AuditLog
+result = AuditLog.verify_chain_integrity_full()
+if not result['is_valid']:
+    print(f"CRITICAL: Audit chain integrity compromised! {result}")
+    exit(1)
+else:
+    print(f"Audit chain verified: {result['verified_entries']}/{result['total_entries']} entries valid")
+EOF
+
+# Log rotation for audit logs
+logrotate /etc/logrotate.d/electra-audit
+```
+
+### Integration with Existing Systems
+
+The audit system automatically integrates with existing modules:
+
+```python
+# Example: Manual audit logging in custom code
+from electra_server.apps.audit.utils import log_user_action
+from electra_server.apps.audit.models import AuditActionType
+
+# Log custom administrative action
+log_user_action(
+    action_type=AuditActionType.ADMIN_ACTION,
+    description='Custom administrative action performed',
+    user=request.user,
+    request=request,
+    outcome='success',
+    metadata={'action_details': 'specific_action_data'}
+)
+```
+
+### Troubleshooting
+
+#### Chain Integrity Issues
+```bash
+# Check for specific chain breaks
+python manage.py shell << EOF
+from electra_server.apps.audit.models import AuditLog
+entries = AuditLog.objects.order_by('chain_position')
+for entry in entries:
+    if not entry.verify_chain_integrity():
+        print(f"Chain break at position {entry.chain_position}: {entry.id}")
+EOF
+
+# Verify signatures
+python manage.py shell << EOF
+from electra_server.apps.audit.models import AuditLog
+invalid_sigs = []
+for entry in AuditLog.objects.all():
+    if not entry.verify_signature():
+        invalid_sigs.append(entry.id)
+print(f"Invalid signatures: {invalid_sigs}")
+EOF
+```
+
+#### Performance Optimization
+```sql
+-- Add additional indexes for large deployments
+CREATE INDEX CONCURRENTLY audit_log_user_timestamp ON audit_log(user_id, timestamp DESC);
+CREATE INDEX CONCURRENTLY audit_log_election_timestamp ON audit_log(election_id, timestamp DESC);
+CREATE INDEX CONCURRENTLY audit_log_action_outcome ON audit_log(action_type, outcome);
+```
+
 ## Deployment
 
 ### Production Environment

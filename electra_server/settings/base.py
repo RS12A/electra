@@ -53,6 +53,7 @@ LOCAL_APPS = [
     'electra_server.apps.elections',
     'electra_server.apps.ballots',
     'electra_server.apps.votes',
+    'electra_server.apps.audit',
     'apps.health',
 ]
 
@@ -60,6 +61,8 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'electra_server.apps.audit.middleware.SecurityEnforcementMiddleware',
+    'electra_server.apps.audit.middleware.TamperDetectionMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -69,6 +72,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'electra_server.middleware.RequestLoggingMiddleware',
+    'electra_server.apps.audit.middleware.AuditTrailMiddleware',
 ]
 
 ROOT_URLCONF = 'electra_server.urls'

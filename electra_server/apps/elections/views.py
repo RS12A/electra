@@ -30,6 +30,10 @@ from .serializers import (
     ElectionStatusSerializer
 )
 
+# Import audit logging utilities
+from electra_server.apps.audit.utils import log_election_event
+from electra_server.apps.audit.models import AuditActionType
+
 User = get_user_model()
 logger = logging.getLogger('electra_server')
 
@@ -114,6 +118,22 @@ class ElectionCreateView(generics.CreateAPIView):
                 'endpoint': 'election_create'
             }
         )
+        
+        # Add audit log entry for election creation
+        log_election_event(
+            action_type=AuditActionType.ELECTION_CREATED,
+            election=election,
+            user=self.request.user,
+            request=self.request,
+            outcome='success',
+            metadata={
+                'election_title': election.title,
+                'election_status': election.status,
+                'start_time': election.start_time.isoformat(),
+                'end_time': election.end_time.isoformat(),
+                'created_by_role': self.request.user.role,
+            }
+        )
     
     def create(self, request, *args, **kwargs):
         """Create election and return detailed response."""
@@ -144,6 +164,15 @@ class ElectionUpdateView(generics.UpdateAPIView):
     
     def perform_update(self, serializer) -> None:
         """Update election with logging."""
+        # Get the original election for comparison
+        original_election = self.get_object()
+        original_data = {
+            'title': original_election.title,
+            'status': original_election.status,
+            'start_time': original_election.start_time.isoformat(),
+            'end_time': original_election.end_time.isoformat(),
+        }
+        
         election = serializer.save()
         
         logger.info(
@@ -154,6 +183,28 @@ class ElectionUpdateView(generics.UpdateAPIView):
                 'election_id': election.id,
                 'election_title': election.title,
                 'endpoint': 'election_update'
+            }
+        )
+        
+        # Add audit log entry for election update
+        log_election_event(
+            action_type=AuditActionType.ELECTION_UPDATED,
+            election=election,
+            user=self.request.user,
+            request=self.request,
+            outcome='success',
+            metadata={
+                'election_title': election.title,
+                'election_status': election.status,
+                'updated_fields': list(serializer.validated_data.keys()),
+                'original_data': original_data,
+                'new_data': {
+                    'title': election.title,
+                    'status': election.status,
+                    'start_time': election.start_time.isoformat(),
+                    'end_time': election.end_time.isoformat(),
+                },
+                'updated_by_role': self.request.user.role,
             }
         )
 
