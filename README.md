@@ -4,6 +4,14 @@ A production-grade Django backend for the Electra voting system, built with secu
 
 ## Features
 
+🗳️ **Vote Casting System**
+- **Secure Vote Casting**: AES-256-GCM encrypted votes with RSA signature verification  
+- **Anonymous Vote Tokens**: Voter identity separated from vote content for anonymity
+- **One Vote Per Election**: Server-side enforcement preventing duplicate voting
+- **Offline Vote Support**: Votes can be cast offline and synced securely when online
+- **Vote Verification**: Cryptographic verification of vote integrity and signatures
+- **Comprehensive Audit Trail**: All voting operations logged while preserving anonymity
+
 🔐 **Security First**
 - JWT authentication with short-lived access tokens (15 minutes) and long-lived refresh tokens (7 days)
 - **RSA Cryptographic Ballot Tokens**: Each ballot token is cryptographically signed using 4096-bit RSA keys
@@ -284,6 +292,130 @@ curl -X POST http://localhost:8000/api/ballots/offline-submit/ \
     "submission_timestamp": "2023-01-15T15:30:00Z"
   }'
 ```
+
+### Vote Casting System
+
+#### Core Vote Operations
+- `POST /api/votes/cast/` - Cast an encrypted vote using a ballot token
+- `POST /api/votes/verify/` - Verify vote signature and integrity
+- `GET /api/votes/status/<uuid:vote_token>/` - Get vote status using anonymous vote token
+
+#### Offline Vote Support  
+- `GET /api/votes/offline-queue/` - List offline vote queue entries
+- `POST /api/votes/offline-submit/` - Submit offline votes for synchronization
+
+#### Audit & Monitoring (admin/electoral committee only)
+- `GET /api/votes/audit-logs/` - View vote operation audit trail
+
+#### Vote Casting Features
+- **AES-256-GCM Encryption**: All vote data encrypted client-side before submission
+- **Anonymous Vote Tokens**: Voter identity separated from vote content for complete anonymity
+- **RSA Signature Verification**: All votes cryptographically signed and verified
+- **One Vote Per Election**: Server-side duplicate vote prevention
+- **Offline Vote Support**: Votes can be cast offline and synced when connectivity is restored
+- **Comprehensive Audit Trail**: All vote operations logged while preserving voter anonymity
+- **Vote Verification**: Independent verification of vote integrity using anonymous tokens
+
+#### Vote Casting Flow
+1. **Request Ballot Token** - User requests signed ballot token for specific election
+2. **Client-Side Encryption** - Vote data encrypted using AES-256-GCM with random key
+3. **Vote Signature** - Vote data signed with RSA private key for integrity
+4. **Submit Vote** - Encrypted vote + signatures submitted to server
+5. **Server Validation** - Token signature, vote signature, and duplication checks
+6. **Anonymous Storage** - Vote stored with anonymous token, voter identity separated
+7. **Vote Verification** - Vote can be independently verified using anonymous token
+
+#### Vote Casting Example
+```bash
+# 1. Cast an encrypted vote (after obtaining ballot token)
+curl -X POST http://localhost:8000/api/votes/cast/ \
+  -H "Authorization: Bearer <your-access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token_uuid": "789e4567-e89b-12d3-a456-426614174001",
+    "token_signature": "abc123def456...",
+    "election_id": "550e8400-e29b-41d4-a716-446655440000",
+    "encrypted_vote_data": "base64_encrypted_vote_data",
+    "encryption_nonce": "base64_encryption_nonce", 
+    "vote_signature": "rsa_signature_of_vote_data",
+    "encryption_key_hash": "sha256_hash_of_client_key"
+  }'
+
+# Response includes anonymous vote token
+{
+  "vote_token": "321e4567-e89b-12d3-a456-426614174003",
+  "status": "cast",
+  "submitted_at": "2023-01-15T15:30:00Z",
+  "message": "Vote cast successfully"
+}
+
+# 2. Verify your vote using anonymous token
+curl -X POST http://localhost:8000/api/votes/verify/ \
+  -H "Authorization: Bearer <your-access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vote_token": "321e4567-e89b-12d3-a456-426614174003",
+    "election_id": "550e8400-e29b-41d4-a716-446655440000"
+  }'
+
+# Response confirms vote integrity  
+{
+  "vote_token": "321e4567-e89b-12d3-a456-426614174003",
+  "signature_valid": true,
+  "status": "cast",
+  "submitted_at": "2023-01-15T15:30:00Z",
+  "election": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "Student Council Elections 2023"
+  },
+  "verified_at": "2023-01-15T16:00:00Z"
+}
+
+# 3. Check vote status
+curl -X GET http://localhost:8000/api/votes/status/321e4567-e89b-12d3-a456-426614174003/ \
+  -H "Authorization: Bearer <your-access-token>"
+
+# 4. Submit offline vote for synchronization
+curl -X POST http://localhost:8000/api/votes/offline-submit/ \
+  -H "Authorization: Bearer <your-access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token_uuid": "789e4567-e89b-12d3-a456-426614174001",
+    "token_signature": "abc123def456...",
+    "encrypted_vote_data": {
+      "election_id": "550e8400-e29b-41d4-a716-446655440000",
+      "encrypted_vote_data": "base64_encrypted_vote_data",
+      "encryption_nonce": "base64_encryption_nonce",
+      "vote_signature": "rsa_signature_of_vote_data",
+      "encryption_key_hash": "sha256_hash_of_client_key"
+    },
+    "client_timestamp": "2023-01-15T15:30:00Z"
+  }'
+```
+
+#### Encryption & Security Details
+
+**Client-Side Encryption Process:**
+1. Generate random 32-byte AES-256 key for each vote
+2. Generate random 12-byte nonce for AES-GCM
+3. Encrypt vote JSON data using AES-256-GCM
+4. Create SHA-256 hash of encryption key for verification
+5. Sign vote data with RSA private key for integrity
+6. Submit encrypted data + signatures to server
+
+**Server-Side Security Measures:**
+- Ballot token RSA signature verification
+- Vote RSA signature verification  
+- Anonymous vote token generation (deterministic but unlinkable)
+- One vote per election enforcement
+- Comprehensive audit logging without voter identification
+- Replay attack prevention through token single-use
+
+**Anonymity Preservation:**
+- Voter identity separated from vote content via anonymous tokens
+- Anonymous tokens generated using deterministic UUID5 from hashed ballot data
+- Audit trails use anonymous tokens and hashed ballot references
+- No direct voter-to-vote linkage stored in database
 
 ### Authentication Flow Example
 

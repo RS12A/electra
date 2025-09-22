@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'electra_server.apps.auth',
     'electra_server.apps.elections',
     'electra_server.apps.ballots',
+    'electra_server.apps.votes',
     'apps.health',
 ]
 
