@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/ballots/', include('electra_server.apps.ballots.urls')),
     path('api/votes/', include('electra_server.apps.votes.urls')),
     path('api/admin/', include('electra_server.apps.admin.urls')),
+    path('api/analytics/', include('electra_server.apps.analytics.urls')),
     path('', include('electra_server.apps.audit.urls')),
 ]
 

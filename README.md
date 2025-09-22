@@ -44,6 +44,14 @@ A production-grade Django backend for the Electra voting system, built with secu
 - Automated linting and formatting
 - Security scanning
 
+📊 **Analytics & Reporting**
+- **Comprehensive Analytics**: Real-time turnout and participation metrics
+- **Time-Series Analysis**: Daily, weekly, and election period analytics
+- **Export Capabilities**: Professional CSV, XLSX, and PDF exports with verification
+- **Category Analysis**: Participation categorization (Excellent, Good, Fair, Critical)
+- **Secure Access**: Admin-only analytics with comprehensive audit logging
+- **Performance Optimized**: Intelligent caching with force-refresh capabilities
+
 📊 **Observability**
 - Structured JSON logging
 - Request tracing with UUIDs
@@ -347,6 +355,249 @@ curl -X POST http://localhost:8000/api/ballots/offline-submit/ \
     "signature": "offline_ballot_signature",
     "submission_timestamp": "2023-01-15T15:30:00Z"
   }'
+```
+
+### Analytics & Reporting System
+
+The Analytics module provides comprehensive voter participation and turnout analytics with secure export capabilities. All analytics endpoints require admin or electoral committee privileges.
+
+#### Access Control
+- **Roles**: Only `admin` and `electoral_committee` roles have access
+- **Security**: TLS 1.3 enforced, comprehensive audit logging
+- **Rate Limiting**: Standard API rate limits apply
+- **Caching**: Intelligent caching with real-time refresh options
+
+#### Analytics Endpoints
+
+##### Turnout Metrics
+- `GET /api/analytics/turnout/` - Get overall and per-election turnout metrics
+- `POST /api/analytics/turnout/` - Get turnout metrics with advanced options
+
+**Query Parameters:**
+- `election_id` (UUID, optional) - Filter by specific election
+- `use_cache` (boolean, default: true) - Enable/disable caching
+- `force_refresh` (boolean, default: false) - Force cache refresh
+
+**Response Structure:**
+```json
+{
+  "overall_turnout": 75.25,
+  "per_election": [
+    {
+      "election_id": "uuid",
+      "election_title": "Student Union Election 2023",
+      "status": "completed",
+      "eligible_voters": 1500,
+      "votes_cast": 1129,
+      "turnout_percentage": 75.27,
+      "category": "good",
+      "start_time": "2023-10-01T09:00:00Z",
+      "end_time": "2023-10-01T17:00:00Z"
+    }
+  ],
+  "summary": {
+    "total_elections": 5,
+    "active_elections": 1,
+    "completed_elections": 4,
+    "total_eligible_voters": 7500,
+    "total_votes_cast": 5643
+  },
+  "metadata": {
+    "calculated_at": "2023-10-15T14:30:00Z",
+    "calculation_duration": 1.25,
+    "data_source": "real_time"
+  }
+}
+```
+
+##### Participation Analytics
+- `GET /api/analytics/participation/` - Get participation analytics by user type and category
+- `POST /api/analytics/participation/` - Get participation analytics with filters
+
+**Query Parameters:**
+- `election_id` (UUID, optional) - Filter by specific election
+- `user_type` (string, optional) - Filter by user type (student, staff, candidate)
+- `use_cache` (boolean, default: true) - Enable/disable caching
+- `force_refresh` (boolean, default: false) - Force cache refresh
+
+**Response Structure:**
+```json
+{
+  "by_user_type": {
+    "student": {
+      "eligible_users": 5000,
+      "participants": 3750,
+      "participation_rate": 75.0,
+      "category": "good"
+    },
+    "staff": {
+      "eligible_users": 500,
+      "participants": 425,
+      "participation_rate": 85.0,
+      "category": "excellent"
+    }
+  },
+  "by_category": {
+    "excellent": 2,
+    "good": 3,
+    "fair": 0,
+    "critical": 0
+  },
+  "summary": {
+    "total_eligible_users": 5500,
+    "total_participants": 4175,
+    "overall_participation_rate": 75.91
+  }
+}
+```
+
+##### Time Series Analytics
+- `GET /api/analytics/time-series/` - Get time-series voting data
+- `POST /api/analytics/time-series/` - Get time-series data with custom parameters
+
+**Query Parameters:**
+- `period_type` (string, default: daily) - Type of aggregation (daily, weekly, election_period)
+- `start_date` (ISO date, optional) - Start date for analysis
+- `end_date` (ISO date, optional) - End date for analysis
+- `election_id` (UUID, optional) - Filter by specific election
+- `use_cache` (boolean, default: true) - Enable/disable caching
+
+**Response Structure:**
+```json
+{
+  "period_type": "daily",
+  "start_date": "2023-10-01T00:00:00Z",
+  "end_date": "2023-10-31T23:59:59Z",
+  "data_points": [
+    {
+      "period": "2023-10-01",
+      "vote_count": 245,
+      "period_start": "2023-10-01T00:00:00Z",
+      "period_end": "2023-10-01T23:59:59Z"
+    }
+  ],
+  "summary": {
+    "total_votes": 5643,
+    "peak_voting_day": {
+      "period": "2023-10-01",
+      "vote_count": 1129
+    },
+    "average_daily_votes": 182.0
+  }
+}
+```
+
+##### Election Summary
+- `GET /api/analytics/election-summary/{election_id}/` - Get comprehensive election summary
+
+**Response includes:**
+- Election details and metadata
+- Complete turnout analysis
+- Participation breakdown by user type
+- Time-series data for the election period
+
+#### Data Export System
+
+##### Export Analytics Data
+- `POST /api/analytics/export/` - Export analytics data in various formats
+
+**Request Body:**
+```json
+{
+  "export_type": "csv|xlsx|pdf",
+  "data_type": "turnout|participation|time_series|election_summary",
+  "election_id": "uuid (optional)",
+  "user_type": "string (optional)",
+  "period_type": "daily|weekly|election_period (for time_series)",
+  "start_date": "ISO date (optional)",
+  "end_date": "ISO date (optional)",
+  "include_verification": true
+}
+```
+
+**Response:**
+- Returns the exported file with appropriate Content-Type
+- Includes verification headers for integrity checking
+
+**Export Formats:**
+- **CSV**: Clean tabular data with metadata headers
+- **XLSX**: Professional spreadsheets with charts and formatting
+- **PDF**: Formatted reports with tables and summary statistics
+
+##### Export Verification
+- `GET /api/analytics/verify/{verification_hash}/` - Verify exported file integrity
+
+**Response:**
+```json
+{
+  "verified": true,
+  "verification_hash": "abc123...",
+  "content_hash": "def456...",
+  "filename": "turnout_metrics_20231015_143000.csv",
+  "export_type": "csv",
+  "file_size": 15420,
+  "created_at": "2023-10-15T14:30:00Z",
+  "requested_by": "Admin User",
+  "export_params": {...},
+  "message": "Export verification successful - file integrity confirmed"
+}
+```
+
+#### Analytics Categories
+
+**Participation Categories:**
+- **Excellent**: ≥80% participation
+- **Good**: 60-79% participation  
+- **Fair**: 40-59% participation
+- **Critical**: <40% participation
+
+#### Caching and Performance
+
+The analytics system uses intelligent caching to provide fast responses:
+
+- **Django Cache**: Fast in-memory/Redis cache for frequently accessed data
+- **Database Cache**: Persistent cache with integrity verification
+- **Cache Keys**: Deterministic cache keys based on parameters
+- **Auto-Expiration**: Configurable cache timeout (default: 1 hour)
+- **Force Refresh**: Admin capability to bypass cache and recalculate
+
+#### Security Features
+
+- **Role-based Access**: Admin and electoral committee only
+- **Audit Logging**: All analytics access logged for security monitoring
+- **Export Verification**: Cryptographic hash verification for all exports
+- **Rate Limiting**: Standard API throttling applies
+- **IP Tracking**: Client IP logging for security analysis
+- **TLS Enforcement**: All data transfer via TLS 1.3
+
+#### Usage Examples
+
+**Get overall turnout metrics:**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/analytics/turnout/"
+```
+
+**Get participation data for students only:**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/analytics/participation/?user_type=student"
+```
+
+**Export election summary as PDF:**
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"export_type": "pdf", "data_type": "election_summary", "election_id": "uuid"}' \
+  "http://localhost:8000/api/analytics/export/" \
+  --output election_summary.pdf
+```
+
+**Verify export integrity:**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/analytics/verify/abc123hash456/"
 ```
 
 ### Vote Casting System
