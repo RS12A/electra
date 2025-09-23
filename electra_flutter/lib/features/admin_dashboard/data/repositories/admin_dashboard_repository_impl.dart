@@ -398,7 +398,7 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
         } else if (statusCode == 403) {
           return AuthFailure('Access forbidden');
         } else if (statusCode == 404) {
-          return NotFoundFailure('Resource not found');
+          return ServerFailure('Resource not found');
         } else if (statusCode >= 400 && statusCode < 500) {
           return ValidationFailure(message.toString());
         } else {
