@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../providers/admin_dashboard_providers.dart';
+import '../widgets/admin_header_widget.dart';
+import '../widgets/admin_metrics_grid.dart';
+import '../widgets/admin_quick_actions.dart';
+import '../widgets/admin_system_alerts.dart';
+import '../widgets/admin_recent_elections.dart';
 
-/// Admin dashboard page for electoral committee and administrators
+/// Enhanced admin dashboard page for electoral committee and administrators
 ///
-/// Provides overview of all elections, user management, and system
-/// monitoring capabilities with role-based access controls.
+/// Provides comprehensive overview with real-time metrics, system alerts,
+/// quick actions, and recent election activity with role-based access controls.
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
 
@@ -14,13 +21,35 @@ class AdminDashboardPage extends ConsumerStatefulWidget {
   ConsumerState<AdminDashboardPage> createState() => _AdminDashboardPageState();
 }
 
-class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
-  bool _isLoading = true;
-
+class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
+    with TickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+  
   @override
   void initState() {
     super.initState();
-    _loadAdminData();
+    _setupAnimations();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  void _setupAnimations() {
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    );
+    
+    _fadeController.forward();
   }
 
   @override
@@ -28,76 +57,377 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
+    final isDesktop = size.width > 1200;
+    
+    final dashboardState = ref.watch(adminDashboardCombinedProvider);
+    final isRefreshing = ref.watch(adminDashboardRefreshControllerProvider);
 
     return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadAdminData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: RefreshIndicator(
+          onRefresh: () => _handleRefresh(),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // Custom App Bar
+              SliverAppBar(
+                expandedHeight: isDesktop ? 200.0 : 160.0,
+                floating: false,
+                pinned: true,
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: AdminHeaderWidget(
+                    metrics: dashboardState.metrics,
+                    isLoading: dashboardState.isLoading,
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      isRefreshing ? Icons.refresh : Icons.refresh_outlined,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    onPressed: isRefreshing ? null : _handleRefresh,
+                    tooltip: 'Refresh Dashboard',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.settings_outlined),
+                    onPressed: () => context.push('/admin/settings'),
+                    tooltip: 'Admin Settings',
+                  ),
+                  const SizedBox(width: 16),
+                ],
+              ),
+
+              // Main Content
+              SliverPadding(
                 padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Admin header
-                    _buildAdminHeader(theme),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Error Display
+                    if (dashboardState.error != null)
+                      _buildErrorCard(dashboardState.error!, theme),
+
+                    // System Alerts (Priority)
+                    if (dashboardState.alerts.isNotEmpty) ...[
+                      AdminSystemAlerts(
+                        alerts: dashboardState.alerts,
+                        onAcknowledge: _handleAcknowledgeAlert,
+                        onAcknowledgeAll: _handleAcknowledgeAllAlerts,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Key Metrics Grid
+                    if (dashboardState.metrics != null)
+                      AdminMetricsGrid(
+                        metrics: dashboardState.metrics!,
+                        isTablet: isTablet,
+                        isDesktop: isDesktop,
+                      ),
 
                     const SizedBox(height: 24),
 
-                    // Quick stats grid
-                    _buildQuickStats(theme, isTablet),
+                    // Quick Actions and Recent Activity Row
+                    if (isDesktop)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: AdminQuickActions(
+                              actions: dashboardState.quickActions,
+                              isLoading: dashboardState.isLoading,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 3,
+                            child: AdminRecentElections(
+                              onViewAll: () => context.push('/admin/elections'),
+                            ),
+                          ),
+                        ],
+                      )
+                    else ...[
+                      // Mobile/Tablet: Stacked layout
+                      AdminQuickActions(
+                        actions: dashboardState.quickActions,
+                        isLoading: dashboardState.isLoading,
+                      ),
+                      const SizedBox(height: 24),
+                      AdminRecentElections(
+                        onViewAll: () => context.push('/admin/elections'),
+                      ),
+                    ],
 
                     const SizedBox(height: 24),
 
-                    // Recent elections
-                    _buildRecentElections(theme),
+                    // System Status Footer
+                    _buildSystemStatus(theme, dashboardState),
 
-                    const SizedBox(height: 24),
-
-                    // System status
-                    _buildSystemStatus(theme),
-
-                    const SizedBox(height: 24),
-
-                    // Quick actions
-                    _buildQuickActions(theme, isTablet),
-                  ],
+                    // Add bottom padding for FAB
+                    const SizedBox(height: 80),
+                  ]),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
+      
+      // Floating Action Button for Quick Access
+      floatingActionButton: _buildFloatingActionButton(context, theme),
     );
   }
 
-  /// Build admin header
-  Widget _buildAdminHeader(ThemeData theme) {
+  /// Handle refresh action
+  Future<void> _handleRefresh() async {
+    final controller = ref.read(adminDashboardRefreshControllerProvider.notifier);
+    await controller.performRefresh();
+  }
+
+  /// Handle acknowledging single alert
+  Future<void> _handleAcknowledgeAlert(String alertId) async {
+    try {
+      final alertsNotifier = ref.read(adminSystemAlertsProvider().notifier);
+      await alertsNotifier.acknowledgeAlert(alertId);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Alert acknowledged successfully'),
+            backgroundColor: KWASUColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to acknowledge alert: $e'),
+            backgroundColor: KWASUColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Handle acknowledging all alerts
+  Future<void> _handleAcknowledgeAllAlerts(List<String> alertIds) async {
+    try {
+      final alertsNotifier = ref.read(adminSystemAlertsProvider().notifier);
+      await alertsNotifier.acknowledgeAlerts(alertIds);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${alertIds.length} alerts acknowledged successfully'),
+            backgroundColor: KWASUColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to acknowledge alerts: $e'),
+            backgroundColor: KWASUColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Build error display card
+  Widget _buildErrorCard(String error, ThemeData theme) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [KWASUColors.primaryBlue, KWASUColors.darkBlue],
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: KWASUColors.error.withOpacity(0.1),
+        border: Border.all(color: KWASUColors.error.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(Icons.admin_panel_settings, color: Colors.white, size: 32),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Admin Dashboard',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+          Icon(
+            Icons.error_outline,
+            color: KWASUColors.error,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dashboard Error',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: KWASUColors.error,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  error,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: KWASUColors.error,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh_outlined),
+            color: KWASUColors.error,
+            onPressed: _handleRefresh,
+            tooltip: 'Retry',
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build system status footer
+  Widget _buildSystemStatus(ThemeData theme, AdminDashboardState state) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.speed_outlined,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'System Status',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildStatusIndicator(
+                  'Database',
+                  state.metrics?.databaseHealth ?? 100,
+                  theme,
+                ),
+                const SizedBox(width: 32),
+                _buildStatusIndicator(
+                  'API Response',
+                  _calculateApiHealthScore(state.metrics?.apiResponseTime ?? 0),
+                  theme,
+                ),
+                const SizedBox(width: 32),
+                _buildStatusIndicator(
+                  'Security',
+                  state.metrics?.securityIncidents == 0 ? 100 : 75,
+                  theme,
+                ),
+              ],
+            ),
+            if (state.lastUpdated != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Last updated: ${_formatLastUpdated(state.lastUpdated!)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build status indicator
+  Widget _buildStatusIndicator(String label, int health, ThemeData theme) {
+    final color = health >= 90
+        ? KWASUColors.success
+        : health >= 70
+        ? KWASUColors.warning
+        : KWASUColors.error;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Icon(
+              health >= 90 ? Icons.check_circle : Icons.warning,
+              color: color,
+              size: 16,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$health%',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Build floating action button
+  Widget _buildFloatingActionButton(BuildContext context, ThemeData theme) {
+    return FloatingActionButton.extended(
+      onPressed: () => context.push('/admin/elections/create'),
+      backgroundColor: KWASUColors.primaryBlue,
+      foregroundColor: Colors.white,
+      icon: const Icon(Icons.add),
+      label: const Text('New Election'),
+      tooltip: 'Create New Election',
+    );
+  }
+
+  /// Calculate API health score from response time
+  int _calculateApiHealthScore(double responseTime) {
+    if (responseTime < 100) return 100;
+    if (responseTime < 300) return 90;
+    if (responseTime < 500) return 75;
+    if (responseTime < 1000) return 50;
+    return 25;
+  }
+
+  /// Format last updated time
+  String _formatLastUpdated(DateTime lastUpdated) {
+    final now = DateTime.now();
+    final difference = now.difference(lastUpdated);
+    
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
+    }
+  }
+}
                       ),
                     ),
                     Text(
