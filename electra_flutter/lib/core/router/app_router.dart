@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/auth/domain/entities/user.dart';
 import '../../features/voting/presentation/pages/voting_dashboard_page.dart';
 import '../../features/voting/presentation/pages/cast_vote_page.dart';
 import '../../features/voting/presentation/pages/ballot_verification_page.dart';
@@ -252,7 +254,7 @@ class AppNavigation {
 
 /// Dummy auth state provider (will be replaced with actual implementation)
 final authStateProvider = StateProvider<AuthState>(
-  (ref) => AuthState.unauthenticated(),
+  (ref) => const AuthState(),
 );
 
 /// Auth state model
@@ -260,7 +262,7 @@ class AuthState {
   final bool isAuthenticated;
   final User? user;
 
-  const AuthState({required this.isAuthenticated, this.user});
+  const AuthState({this.isAuthenticated = false, this.user});
 
   factory AuthState.authenticated(User user) =>
       AuthState(isAuthenticated: true, user: user);
@@ -268,21 +270,3 @@ class AuthState {
   factory AuthState.unauthenticated() =>
       const AuthState(isAuthenticated: false, user: null);
 }
-
-/// User model stub
-class User {
-  final String id;
-  final String email;
-  final String fullName;
-  final UserRole role;
-
-  const User({
-    required this.id,
-    required this.email,
-    required this.fullName,
-    required this.role,
-  });
-}
-
-/// User roles
-enum UserRole { student, staff, admin, electoralCommittee }
