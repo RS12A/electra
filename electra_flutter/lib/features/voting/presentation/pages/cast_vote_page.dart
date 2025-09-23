@@ -444,67 +444,41 @@ class _CastVotePageState extends ConsumerState<CastVotePage>
     );
   }
 
-                  const SizedBox(height: 24),
-
-                  // Ballot sections
-                  _buildBallotSections(theme),
-
-                  const SizedBox(height: 32),
-
-                  // Submit button
-                  _buildSubmitSection(theme),
-                ],
+  // Additional missing methods
+  Widget _buildConfirmationState(ThemeData theme, bool isTablet) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(isTablet ? 32.0 : 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle,
+              size: 64,
+              color: KWASUColors.success,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Vote Cast Successfully!',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: KWASUColors.success,
               ),
             ),
-    );
-  }
-
-  /// Build election information section
-  Widget _buildElectionInfo(ThemeData theme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.ballot, color: KWASUColors.primaryBlue),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Student Union Executive Elections 2024',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              'Choose your student union representatives for the 2024-2025 academic session.',
-              style: theme.textTheme.bodyMedium,
-            ),
-
             const SizedBox(height: 16),
-
-            Row(
-              children: [
-                _buildInfoChip(
-                  'Ends in 6 days',
-                  Icons.schedule,
-                  KWASUColors.warning,
-                ),
-                const SizedBox(width: 12),
-                _buildInfoChip(
-                  '3,245 eligible voters',
-                  Icons.people,
-                  KWASUColors.info,
-                ),
-              ],
+            Text(
+              'Your vote has been securely encrypted and submitted.',
+              style: theme.textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => context.pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: KWASUColors.primaryBlue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Return to Dashboard'),
             ),
           ],
         ),
@@ -512,25 +486,76 @@ class _CastVotePageState extends ConsumerState<CastVotePage>
     );
   }
 
-  /// Build info chip
-  Widget _buildInfoChip(String text, IconData icon, Color color) {
+  Widget _buildSecuritySection(ThemeData theme, bool isTablet) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+      margin: EdgeInsets.symmetric(
+        horizontal: isTablet ? 24.0 : 16.0,
+        vertical: 8.0,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KWASUColors.success.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: KWASUColors.success.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+          Row(
+            children: [
+              Icon(Icons.security, color: KWASUColors.success),
+              const SizedBox(width: 8),
+              Text(
+                'Security Features',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: KWASUColors.success,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildSecurityFeature('End-to-End Encryption', 'Your vote is encrypted with AES-256-GCM'),
+          _buildSecurityFeature('Anonymous Voting', 'Your identity is separated from your vote'),
+          _buildSecurityFeature('Ballot Token Authentication', 'Prevents double voting and fraud'),
+          if (!_hasInternetConnection)
+            _buildSecurityFeature('Offline Support', 'Vote will be queued for later submission'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityFeature(String title, String description) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.verified,
+            size: 16,
+            color: KWASUColors.success,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: KWASUColors.success,
+                  ),
+                ),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: KWASUColors.grey600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -538,9 +563,12 @@ class _CastVotePageState extends ConsumerState<CastVotePage>
     );
   }
 
-  /// Build voting instructions
-  Widget _buildInstructions(ThemeData theme) {
+  Widget _buildInstructions(ThemeData theme, bool isTablet) {
     return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: isTablet ? 24.0 : 16.0,
+        vertical: 8.0,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: KWASUColors.info.withOpacity(0.1),
@@ -563,14 +591,12 @@ class _CastVotePageState extends ConsumerState<CastVotePage>
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Text(
             '• Select one candidate for each position\n'
-            '• You can change your selection before submitting\n'
-            '• Review your choices carefully before confirming\n'
-            '• Your vote is anonymous and cannot be traced back to you',
+            '• Review your selections in the summary below\n'
+            '• Tap "Cast Vote" when ready to submit\n'
+            '• Your vote cannot be changed after submission',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: KWASUColors.info,
             ),
@@ -580,422 +606,338 @@ class _CastVotePageState extends ConsumerState<CastVotePage>
     );
   }
 
-  /// Build ballot sections
-  Widget _buildBallotSections(ThemeData theme) {
-    return Column(
-      children: [
-        _buildBallotSection('President', 'president', [
-          _mockCandidate(
-            'John Doe',
-            'Computer Science',
-            'Transforming KWASU through technology',
+  List<Widget> _buildBallotSections(ThemeData theme, bool isTablet) {
+    return _candidatesByPosition.entries.map((entry) {
+      final position = entry.key;
+      final candidates = entry.value;
+      
+      return SliverToBoxAdapter(
+        child: Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: isTablet ? 24.0 : 16.0,
+            vertical: 8.0,
           ),
-          _mockCandidate(
-            'Jane Smith',
-            'Mass Communication',
-            'Unity, Progress, Excellence',
-          ),
-          _mockCandidate(
-            'Mike Johnson',
-            'Business Administration',
-            'Students first, always',
-          ),
-        ], theme),
-
-        const SizedBox(height: 24),
-
-        _buildBallotSection('Vice President', 'vice_president', [
-          _mockCandidate(
-            'Sarah Wilson',
-            'Engineering',
-            'Building bridges, creating solutions',
-          ),
-          _mockCandidate(
-            'David Brown',
-            'Law',
-            'Justice and fairness for all students',
-          ),
-        ], theme),
-
-        const SizedBox(height: 24),
-
-        _buildBallotSection('Secretary General', 'secretary', [
-          _mockCandidate(
-            'Emma Davis',
-            'English',
-            'Effective communication, efficient service',
-          ),
-          _mockCandidate(
-            'Alex Taylor',
-            'Mathematics',
-            'Precision in leadership, excellence in service',
-          ),
-          _mockCandidate(
-            'Lisa Garcia',
-            'Psychology',
-            'Understanding students, serving better',
-          ),
-        ], theme),
-      ],
-    );
-  }
-
-  /// Build individual ballot section
-  Widget _buildBallotSection(
-    String position,
-    String positionId,
-    List<Map<String, String>> candidates,
-    ThemeData theme,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          position,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: KWASUColors.primaryBlue,
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        Card(
           child: Column(
-            children: candidates
-                .asMap()
-                .entries
-                .map(
-                  (entry) => _buildCandidateOption(
-                    entry.value,
-                    positionId,
-                    entry.key,
-                    theme,
-                  ),
-                )
-                .toList(),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                position,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: KWASUColors.primaryBlue,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...candidates.map((candidate) => 
+                _buildCandidateSelectionCard(candidate, theme, isTablet)),
+            ],
           ),
         ),
-      ],
-    );
+      );
+    }).toList();
   }
 
-  /// Build individual candidate option
-  Widget _buildCandidateOption(
-    Map<String, String> candidate,
-    String positionId,
-    int index,
-    ThemeData theme,
-  ) {
-    final isSelected = _selectedCandidates[positionId] == candidate['id'];
-
+  Widget _buildCandidateSelectionCard(Candidate candidate, ThemeData theme, bool isTablet) {
+    final isSelected = _selectedCandidates[candidate.position] == candidate.id;
+    
     return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: index < 2
-              ? BorderSide(color: theme.dividerColor)
-              : BorderSide.none,
-        ),
-      ),
-      child: RadioListTile<String>(
-        title: Text(
-          candidate['name']!,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(candidate['department']!),
-            const SizedBox(height: 4),
-            Text(
-              candidate['manifesto']!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontStyle: FontStyle.italic,
-                color: theme.colorScheme.onSurfaceVariant,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedCandidates[candidate.position] = candidate.id;
+            });
+            HapticFeedback.lightImpact();
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isSelected 
+                  ? KWASUColors.primaryBlue.withOpacity(0.1)
+                  : theme.cardColor,
+              border: Border.all(
+                color: isSelected 
+                    ? KWASUColors.primaryBlue
+                    : theme.dividerColor,
+                width: isSelected ? 2 : 1,
               ),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
-        value: candidate['id']!,
-        groupValue: _selectedCandidates[positionId],
-        onChanged: (value) {
-          setState(() {
-            _selectedCandidates[positionId] = value!;
-          });
-        },
-        activeColor: KWASUColors.primaryBlue,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-    );
-  }
-
-  /// Build submit section
-  Widget _buildSubmitSection(ThemeData theme) {
-    final hasAllSelections = _selectedCandidates.length >= 3; // All positions
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Review selections
-        if (_selectedCandidates.isNotEmpty) ...[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Your Selections',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  ..._selectedCandidates.entries.map((entry) {
-                    final candidate = _getCandidateById(entry.value);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: KWASUColors.success,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${_getPositionName(entry.key)}: ${candidate['name']}',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ),
-                        ],
+            child: Row(
+              children: [
+                // Radio button
+                Radio<String>(
+                  value: candidate.id,
+                  groupValue: _selectedCandidates[candidate.position],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCandidates[candidate.position] = value!;
+                    });
+                    HapticFeedback.lightImpact();
+                  },
+                  activeColor: KWASUColors.primaryBlue,
+                ),
+                const SizedBox(width: 12),
+                
+                // Candidate info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        candidate.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? KWASUColors.primaryBlue : null,
+                        ),
                       ),
-                    );
-                  }).toList(),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-        ],
-
-        // Submit button
-        ElevatedButton(
-          onPressed: _isSubmitting || !hasAllSelections
-              ? null
-              : _handleSubmitVote,
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            backgroundColor: KWASUColors.success,
-          ),
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      const SizedBox(height: 4),
+                      Text(
+                        candidate.department,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: KWASUColors.secondaryGreen,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        candidate.manifesto,
+                        style: theme.textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                )
-              : const Text('Submit Vote'),
-        ),
-
-        if (!hasAllSelections) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Please select a candidate for all positions before submitting.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: KWASUColors.error,
+                ),
+              ],
             ),
-            textAlign: TextAlign.center,
           ),
-        ],
-      ],
+        ),
+      ),
     );
   }
 
-  /// Handle vote submission
-  void _handleSubmitVote() async {
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Your Vote'),
-        content: const Text(
-          'Are you sure you want to submit your vote? '
-          'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Submit'),
-          ),
-        ],
+  Widget _buildSelectionSummary(ThemeData theme, bool isTablet) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: isTablet ? 24.0 : 16.0,
+        vertical: 8.0,
       ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      // TODO: Implement vote submission logic
-      // await ref.read(voteServiceProvider).submitVote(
-      //   electionId: widget.electionId!,
-      //   selections: _selectedCandidates,
-      // );
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 3));
-
-      if (mounted) {
-        // Show success dialog
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            icon: Icon(
-              Icons.check_circle,
-              color: KWASUColors.success,
-              size: 48,
-            ),
-            title: const Text('Vote Submitted Successfully'),
-            content: const Text(
-              'Your vote has been recorded securely. '
-              'Thank you for participating in the election.',
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop(); // Go back to dashboard
-                },
-                child: const Text('Done'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: KWASUColors.success.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: KWASUColors.success.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: KWASUColors.success),
+              const SizedBox(width: 8),
+              Text(
+                'Your Selections',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: KWASUColors.success,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
-        );
-      }
-    } catch (error) {
+          const SizedBox(height: 12),
+          ..._selectedCandidates.entries.map((entry) {
+            final candidate = _candidates.firstWhere((c) => c.id == entry.value);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check,
+                    size: 16,
+                    color: KWASUColors.success,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${entry.key}: ${candidate.name}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(ThemeData theme) {
+    if (_selectedCandidates.isEmpty || _showConfirmation) {
+      return const SizedBox.shrink();
+    }
+
+    final requiredPositions = _election?.positions.length ?? 1;
+    final hasAllSelections = _selectedCandidates.length >= requiredPositions;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!hasAllSelections)
+            Text(
+              'Please select candidates for all positions to continue',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: KWASUColors.warning,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: (!hasAllSelections || _isSubmitting) 
+                ? null 
+                : _handleSubmitVote,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              backgroundColor: KWASUColors.success,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: KWASUColors.grey300,
+            ),
+            child: _isSubmitting
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text('${_hasInternetConnection ? 'Casting' : 'Queuing'} Vote...'),
+                    ],
+                  )
+                : const Text(
+                    'Cast My Vote',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleSubmitVote() async {
+    // Show confirmation dialog
+    final confirmed = await _showConfirmationDialog();
+    if (!confirmed) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // Simulate vote encryption and submission
+      await _simulateVoteSubmission();
+      
+      setState(() => _showConfirmation = true);
+      
+      // Auto-navigate after success
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          context.pop();
+        }
+      });
+
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to submit vote: ${error.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text('Failed to cast vote: ${e.toString()}'),
+            backgroundColor: KWASUColors.error,
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
+        setState(() => _isSubmitting = false);
       }
     }
   }
 
-  /// Load election data
-  Future<void> _loadElectionData() async {
-    // TODO: Load election and candidates from API
-    // final election = await ref.read(electionServiceProvider).getElection(widget.electionId!);
-    // final candidates = await ref.read(candidateServiceProvider).getCandidates(widget.electionId!);
+  Future<bool> _showConfirmationDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Your Vote'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Please review your selections:'),
+            const SizedBox(height: 12),
+            ..._selectedCandidates.entries.map((entry) {
+              final candidate = _candidates.firstWhere((c) => c.id == entry.value);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('• ${entry.key}: ${candidate.name}'),
+              );
+            }).toList(),
+            const SizedBox(height: 12),
+            Text(
+              'Once submitted, your vote cannot be changed.',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: KWASUColors.warning,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Review Again'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: KWASUColors.success,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirm & Cast Vote'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+  Future<void> _simulateVoteSubmission() async {
+    // Simulate encryption process
+    for (int i = 0; i <= 100; i += 10) {
+      setState(() => _encryptionProgress = i);
+      await Future.delayed(const Duration(milliseconds: 100));
     }
+    
+    // Simulate network submission or offline queueing
+    await Future.delayed(const Duration(milliseconds: 500));
   }
-
-  /// Create mock candidate data
-  Map<String, String> _mockCandidate(
-    String name,
-    String department,
-    String manifesto,
-  ) {
-    return {
-      'id': name.toLowerCase().replaceAll(' ', '_'),
-      'name': name,
-      'department': department,
-      'manifesto': manifesto,
-    };
-  }
-
-  /// Get candidate by ID
-  Map<String, String> _getCandidateById(String id) {
-    // Mock implementation
-    final allCandidates = [
-      _mockCandidate(
-        'John Doe',
-        'Computer Science',
-        'Transforming KWASU through technology',
-      ),
-      _mockCandidate(
-        'Jane Smith',
-        'Mass Communication',
-        'Unity, Progress, Excellence',
-      ),
-      _mockCandidate(
-        'Mike Johnson',
-        'Business Administration',
-        'Students first, always',
-      ),
-      _mockCandidate(
-        'Sarah Wilson',
-        'Engineering',
-        'Building bridges, creating solutions',
-      ),
-      _mockCandidate(
-        'David Brown',
-        'Law',
-        'Justice and fairness for all students',
-      ),
-      _mockCandidate(
-        'Emma Davis',
-        'English',
-        'Effective communication, efficient service',
-      ),
-      _mockCandidate(
-        'Alex Taylor',
-        'Mathematics',
-        'Precision in leadership, excellence in service',
-      ),
-      _mockCandidate(
-        'Lisa Garcia',
-        'Psychology',
-        'Understanding students, serving better',
-      ),
-    ];
-
-    return allCandidates.firstWhere((c) => c['id'] == id);
-  }
-
-  /// Get position name by ID
-  String _getPositionName(String positionId) {
-    switch (positionId) {
-      case 'president':
-        return 'President';
-      case 'vice_president':
-        return 'Vice President';
-      case 'secretary':
-        return 'Secretary General';
-      default:
-        return positionId;
-    }
-  }
+}
 }

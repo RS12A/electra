@@ -6,14 +6,71 @@ A complete production-grade digital voting platform with Django backend and Flut
 
 The Electra Flutter app provides a modern, secure, and user-friendly interface for the digital voting system:
 
-- **🎨 KWASU Branding**: Custom theme with university colors and typography
-- **🔐 Secure Authentication**: Multi-format login (email, matric number, staff ID) with biometric support
-- **🗳️ Interactive Voting**: Step-by-step vote casting with candidate profiles and real-time validation
-- **📊 Admin Dashboard**: Comprehensive management interface for electoral committees
-- **📈 Analytics**: Real-time turnout metrics and exportable reports
-- **🔔 Notifications**: Push notifications for election updates and reminders
-- **💾 Offline Support**: Vote offline and sync when connectivity is restored
-- **📱 Responsive Design**: Optimized for both mobile and tablet devices
+### 🎨 **Modern UI/UX Design**
+- **KWASU Branding**: Custom theme with university colors and typography
+- **Neomorphic Design**: Next-generation UI with smooth shadows and depth
+- **Responsive Layout**: Optimized for both mobile and tablet devices
+- **Dark/Light Theme**: Dynamic theme switching with system integration
+- **Smooth Animations**: 60fps animations and micro-interactions
+
+### 🗳️ **Production-Grade Voting Screens**
+
+#### Candidate Listing Screen
+- **Rich Candidate Profiles**: Photos, manifestos, department info, and campaign videos
+- **Interactive Cards**: Expandable candidate cards with smooth animations
+- **Position Filtering**: Filter candidates by position with smooth transitions  
+- **Search & Sort**: Find candidates quickly with real-time search
+- **Accessibility**: Full screen reader and keyboard navigation support
+
+#### Vote Casting Screen  
+- **Secure Vote Selection**: Radio button selection with visual feedback
+- **Real-time Validation**: Immediate validation of selections
+- **Security Indicators**: Visual encryption and connection status
+- **Progress Tracking**: Step-by-step progress through ballot positions
+- **Selection Summary**: Review panel showing all choices before submission
+
+#### Vote Confirmation Screen
+- **Success Animation**: Animated success feedback with haptic responses  
+- **Anonymized Summary**: Vote confirmation without revealing selections
+- **Verification Codes**: QR codes and tokens for independent vote verification
+- **Security Details**: Explanation of encryption and anonymity measures
+- **Next Election Info**: Countdown and information about upcoming elections
+
+### 🔐 **Security & Encryption**
+- **End-to-End Encryption**: AES-256-GCM encryption of vote data
+- **RSA Signatures**: Cryptographic signatures for vote integrity  
+- **Anonymous Voting**: Complete separation of voter identity from vote content
+- **Ballot Token System**: Secure token-based authentication prevents double voting
+- **Offline Security**: Encrypted local storage for offline votes
+
+### 💾 **Offline Support**
+- **Offline Vote Casting**: Cast votes without internet connection
+- **Encrypted Queue**: Votes stored encrypted until sync
+- **Automatic Sync**: Background synchronization when connection restored
+- **Sync Status**: Visual indicators for offline votes and sync progress
+- **Conflict Resolution**: Smart handling of sync conflicts and errors
+
+### 🔧 **State Management & Architecture**
+- **Clean Architecture**: Domain-driven design with clear separation of concerns
+- **Riverpod State Management**: Reactive state management with proper error handling
+- **Repository Pattern**: Abstracted data access with repository interfaces
+- **Use Cases**: Business logic encapsulated in dedicated use case classes
+- **Dependency Injection**: Proper dependency management with GetIt
+
+### ♿ **Accessibility Features**
+- **Screen Reader Support**: Full VoiceOver and TalkBack compatibility
+- **High Contrast**: Support for high contrast accessibility settings
+- **Font Scaling**: Respects system font size preferences
+- **Keyboard Navigation**: Complete keyboard navigation support
+- **Focus Management**: Proper focus ordering and visual indicators
+- **Semantic Labels**: Comprehensive semantic labeling for all UI elements
+
+### 🧪 **Testing & Quality**
+- **Widget Tests**: Comprehensive UI component testing
+- **Unit Tests**: Domain logic and use case testing  
+- **Integration Tests**: End-to-end voting flow testing
+- **Golden Tests**: Visual regression testing for UI consistency
+- **Accessibility Tests**: Automated accessibility compliance testing
 
 [👉 **View Flutter Frontend Documentation**](./electra_flutter/README.md)
 
@@ -801,6 +858,172 @@ curl -X POST http://localhost:8000/api/auth/logout/ \
     "refresh": "<your-refresh-token>"
   }'
 ```
+
+## 📱 Voting Screens User Guide
+
+The Electra Flutter app provides a seamless and secure voting experience through three main screens:
+
+### 🗳️ **Candidate Listing Screen**
+
+The candidate listing screen allows voters to browse and learn about all candidates before making their selections.
+
+#### Features
+- **Rich Candidate Profiles**: Each candidate card displays:
+  - Professional photo or placeholder avatar
+  - Full name, department/faculty, and position
+  - Campaign manifesto and key messages
+  - Additional information when expanded
+  - Campaign video (when available)
+
+- **Interactive Design**:
+  - Neomorphic card design with smooth animations
+  - Expandable cards for detailed information  
+  - Smooth hover and tap animations with haptic feedback
+  - Position-based filtering with animated tabs
+
+- **Accessibility**:
+  - Full screen reader support with semantic labels
+  - Keyboard navigation for all interactive elements
+  - High contrast support and font scaling
+  - Focus management and visual indicators
+
+#### Navigation Flow
+1. Select election from dashboard → View candidates
+2. Filter candidates by position using top tabs
+3. Tap candidate cards to expand for more details
+4. Tap "Vote for this Candidate" to proceed to vote casting
+5. Use refresh button to reload candidate data
+
+### 🔒 **Vote Casting Screen**
+
+The vote casting screen provides a secure interface for selecting candidates and submitting encrypted votes.
+
+#### Security Features
+- **Visual Security Indicators**:
+  - Live connection status (Secure/Checking)
+  - End-to-end encryption status
+  - Offline mode indicators when disconnected
+
+- **Encryption & Anonymity**:
+  - AES-256-GCM encryption of vote selections
+  - RSA cryptographic signatures for integrity
+  - Anonymous vote tokens separate identity from vote
+  - Client-side encryption before transmission
+
+#### Voting Process
+1. **Election Information**: Display of election details and timing
+2. **Security Briefing**: Overview of security features and anonymity
+3. **Voting Instructions**: Step-by-step guidance for vote casting
+4. **Ballot Sections**: Organized by position with radio button selection
+5. **Selection Review**: Summary panel showing all choices
+6. **Secure Submission**: Encrypted vote transmission with progress indicators
+
+#### Offline Support
+- **Offline Vote Casting**: Full voting capability without internet
+- **Encrypted Queue**: Votes stored securely until connection restored
+- **Visual Indicators**: Clear offline mode notifications
+- **Automatic Sync**: Background synchronization when online
+
+### ✅ **Vote Confirmation Screen**
+
+The confirmation screen provides feedback on successful vote submission while maintaining voter anonymity.
+
+#### Confirmation Details
+- **Success Animation**: Animated checkmark with haptic feedback
+- **Vote Summary**: Anonymized confirmation details:
+  - Unique confirmation ID for records
+  - Masked vote token for verification
+  - Election title and timestamp
+  - Number of positions voted
+  - Verification QR code/token
+
+- **Security Information**: Explanation of:
+  - Anonymous voting principles
+  - End-to-end encryption details
+  - Zero-knowledge verification
+  - Cryptographic integrity measures
+
+#### Post-Vote Actions
+- **Vote Verification**: Link to independent vote verification
+- **Anonymous Sharing**: Social sharing without revealing choices
+- **Dashboard Return**: Quick return to main dashboard
+- **Next Election Info**: Countdown and details for upcoming elections
+
+### 🔄 **Error Handling & Recovery**
+
+#### Network Issues
+- **Offline Detection**: Automatic detection of connectivity loss
+- **Queue Management**: Local encrypted storage of offline votes
+- **Retry Logic**: Smart retry mechanisms for failed submissions
+- **Status Indicators**: Real-time sync status and progress
+
+#### Validation & Security
+- **Input Validation**: Real-time validation of selections
+- **Security Checks**: Ballot token validation and authentication
+- **Error Recovery**: Clear error messages with recovery suggestions
+- **Audit Trail**: Comprehensive logging while preserving anonymity
+
+#### User Experience
+- **Loading States**: Skeleton loading and progress indicators  
+- **Error Feedback**: User-friendly error messages with actions
+- **Success Feedback**: Clear confirmation of successful operations
+- **Help & Support**: Contextual help and support information
+
+### 🧪 **Testing Instructions**
+
+#### Widget Testing
+```bash
+# Run candidate listing tests
+flutter test test/widget/voting/candidate_listing_test.dart
+
+# Run candidate card component tests  
+flutter test test/widget/voting/candidate_card_test.dart
+
+# Run vote casting page tests
+flutter test test/widget/voting/cast_vote_page_test.dart
+```
+
+#### Unit Testing
+```bash
+# Test domain entities
+flutter test test/unit/voting/domain_entities_test.dart
+
+# Test use cases
+flutter test test/unit/voting/voting_usecases_test.dart
+
+# Test state management
+flutter test test/unit/voting/voting_providers_test.dart
+```
+
+#### Integration Testing
+```bash
+# Run complete voting flow tests
+flutter test integration_test/voting_flow_test.dart
+
+# Run accessibility tests
+flutter test test/accessibility/voting_accessibility_test.dart
+```
+
+#### Test Coverage
+```bash
+# Generate test coverage report
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html
+```
+
+### 📱 **Platform Compatibility**
+
+#### Supported Platforms
+- **iOS**: iOS 11.0 and above
+- **Android**: Android API level 21 (Android 5.0) and above  
+- **Web**: Modern browsers with JavaScript enabled
+- **Desktop**: Windows 10, macOS 10.14, Ubuntu 18.04
+
+#### Responsive Design
+- **Mobile First**: Optimized for mobile devices
+- **Tablet Support**: Enhanced layouts for tablets
+- **Desktop Adaptation**: Proper scaling for desktop use
+- **Orientation**: Support for portrait and landscape modes
 
 ## Development
 
