@@ -14,6 +14,14 @@ lib/
 │   ├── theme/                    # KWASU theming and branding
 │   ├── network/                  # HTTP client and API services
 │   ├── storage/                  # Local storage (Hive/Isar)
+│   ├── offline/                  # Production-grade offline support system
+│   │   ├── models/              # Queue items, sync config, network status
+│   │   ├── services/            # Sync orchestrator, network monitor, handlers
+│   │   ├── repositories/        # Encrypted queue repository
+│   │   ├── encryption/          # AES-256-GCM encryption service
+│   │   ├── providers/           # Riverpod state management
+│   │   ├── widgets/             # Offline status & sync control UI
+│   │   └── di/                  # Offline module dependency injection
 │   └── error/                    # Error handling
 ├── features/                     # Feature modules
 │   ├── auth/                     # Authentication (login, register, password recovery)
@@ -99,6 +107,60 @@ Each feature module follows Clean Architecture layers:
 - **Firebase FCM**: Secure push notification delivery with topic management
 - **Deep Linking**: Navigate directly to relevant content from notifications
 - **Sync Management**: Intelligent offline/online synchronization with conflict resolution
+
+### 📡 **Production-Grade Offline Support**
+- **Secure Queueing**: AES-256-GCM encrypted local storage for offline operations
+- **Smart Sync**: Exponential backoff retry with intelligent conflict resolution
+- **Operation Types**: Vote casting, auth refresh, profile updates, notification acknowledgments
+- **Conflict Resolution**: Election votes → never overwrite/reject duplicates; Profile updates → latest wins
+- **Network Monitoring**: Real-time connection quality assessment (offline/poor/moderate/good/excellent)
+- **Batch Processing**: FIFO queue execution with rollback protection and priority handling
+- **Status Indicators**: Real-time sync status with smooth animations and progress tracking
+- **Background Sync**: Automatic synchronization when network conditions improve
+- **Eventual Consistency**: Guarantees data consistency across devices and sessions
+- **Security Features**: Encrypted payloads, integrity verification, secure key rotation
+- **Performance**: Efficient batch processing with concurrent operation limits
+- **Testing**: Comprehensive unit, integration, and widget tests for reliability
+
+#### **Offline Architecture**
+```
+Offline Module Architecture:
+┌─────────────────────────────────────────────────────────────┐
+│                    Presentation Layer                        │
+│  ┌─────────────────┐  ┌──────────────────────────────────┐  │
+│  │ Status Widgets  │  │     Riverpod Providers          │  │
+│  │ Sync Controls   │  │   (Global State Management)     │  │
+│  └─────────────────┘  └──────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     Service Layer                           │
+│  ┌─────────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ Sync            │  │ Network      │  │ Sync Handler  │  │
+│  │ Orchestrator    │  │ Monitor      │  │ Service       │  │
+│  └─────────────────┘  └──────────────┘  └───────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                  Data & Security Layer                      │
+│  ┌─────────────────┐  ┌──────────────────────────────────┐  │
+│  │ Encrypted       │  │        AES-256-GCM               │  │
+│  │ Queue Repo      │  │     Encryption Service          │  │ 
+│  └─────────────────┘  └──────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Storage Layer                            │
+│  ┌─────────────────┐  ┌──────────────────────────────────┐  │
+│  │ Isar Database   │  │    Flutter Secure Storage       │  │
+│  │ (Queue Items)   │  │    (Encryption Keys)            │  │
+│  └─────────────────┘  └──────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### **Sync Strategies**
+- **Votes**: Never overwrite, reject duplicates to prevent double voting
+- **Profile Updates**: Latest timestamp wins to ensure most recent data
+- **Auth Tokens**: Local wins (newest token) for security freshness  
+- **Notifications**: Merge/allow duplicates for comprehensive delivery
+- **Timetable Events**: Latest wins with intelligent conflict detection
 
 ### 🔔 **Legacy Notifications**
 - **Real-time Alerts**: Election updates and system notifications
@@ -385,6 +447,217 @@ POST /api/timetable/events/{id}/reminders
 }
 ```
 
+## 📡 Offline Support Setup
+
+### Quick Start
+```dart
+// Initialize offline module in main.dart
+await OfflineModuleInitializer.initialize(
+  isDevelopment: kDebugMode,
+  isBatteryOptimized: false,
+);
+
+// Access offline operations in widgets
+final offlineQueue = ref.read(offlineQueueProvider);
+
+// Queue a vote for offline submission
+await offlineQueue.queueVote(
+  electionId: 'election-123',
+  selections: {'president': 'candidate-1'},
+  ballotToken: 'ballot-token-xyz',
+  userId: 'user-456',
+);
+```
+
+### Usage Examples
+
+#### Monitoring Network Status
+```dart
+// Watch network connectivity
+final networkStatus = ref.watch(offlineStateProvider.select(
+  (state) => state.networkStatus,
+));
+
+// Check if device is online
+final isConnected = ref.watch(isConnectedProvider);
+
+// Check if sync is recommended
+final canSync = ref.watch(syncRecommendedProvider);
+```
+
+#### Manual Sync Operations
+```dart
+// Start manual sync
+final offlineNotifier = ref.read(offlineStateProvider.notifier);
+await offlineNotifier.startManualSync();
+
+// Sync specific operation types
+await offlineNotifier.startManualSync(
+  operationTypes: [QueueOperationType.vote],
+);
+
+// Sync high priority items only  
+await offlineNotifier.startManualSync(
+  priorities: [QueuePriority.high, QueuePriority.critical],
+);
+```
+
+#### Queue Management
+```dart
+// Queue different operation types
+final queueOps = ref.read(offlineQueueProvider);
+
+// Queue authentication refresh
+await queueOps.queueAuthRefresh(
+  refreshToken: 'refresh-token',
+  userId: 'user-id',
+);
+
+// Queue profile update
+await queueOps.queueProfileUpdate(
+  profileData: {'name': 'Updated Name'},
+  userId: 'user-id',
+);
+
+// Queue notification acknowledgment
+await queueOps.queueNotificationAck(
+  notificationId: 'notification-id',
+  userId: 'user-id',
+);
+```
+
+#### UI Integration
+```dart
+// Display offline status indicator
+OfflineStatusIndicator(
+  showDetails: true,
+  onTap: () => _showOfflineDetails(),
+)
+
+// Compact status for app bars
+CompactOfflineStatusIndicator(
+  onTap: () => _showSyncControls(),
+)
+
+// Full sync control widget
+SyncControlWidget(
+  showAdvancedControls: true,
+)
+```
+
+### Configuration Options
+
+#### Development Configuration
+```dart
+// Faster sync for development
+await OfflineModuleConfig.configureDevelopment(GetIt.instance);
+
+// Or use preset
+await OfflineModuleInitializer.initialize(isDevelopment: true);
+```
+
+#### Production Configuration  
+```dart
+// Conservative settings for production
+await OfflineModuleConfig.configureProduction(GetIt.instance);
+
+// Custom sync configuration
+final customConfig = SyncConfig(
+  enabled: true,
+  wifiOnly: false,
+  maxBatchSize: 5,
+  syncTimeout: Duration(seconds: 30),
+  retryConfig: RetryConfig(
+    maxRetries: 3,
+    initialDelay: Duration(seconds: 2),
+    backoffMultiplier: 2.0,
+  ),
+  conflictRules: SyncConfigPresets.getDefaultConflictRules(),
+);
+
+final syncOrchestrator = GetIt.instance<SyncOrchestratorService>();
+syncOrchestrator.updateConfig(customConfig);
+```
+
+#### Battery Optimization
+```dart
+// Battery-optimized configuration
+await OfflineModuleInitializer.initialize(isBatteryOptimized: true);
+
+// This enables:
+// - WiFi-only sync
+// - Charging requirement
+// - Longer sync intervals
+// - Reduced concurrent operations
+```
+
+### Sync Strategies & Conflict Resolution
+
+#### Vote Operations
+```dart
+// Votes use reject strategy - no duplicates allowed
+ConflictRule(
+  operationType: QueueOperationType.vote,
+  strategy: ConflictResolution.reject,
+  allowDuplicates: false,
+)
+```
+
+#### Profile Updates
+```dart  
+// Profile updates use latest wins strategy
+ConflictRule(
+  operationType: QueueOperationType.profileUpdate,
+  strategy: ConflictResolution.latestWins,
+  allowDuplicates: false,
+)
+```
+
+#### Custom Conflict Rules
+```dart
+final customRules = {
+  QueueOperationType.vote: ConflictRule(
+    operationType: QueueOperationType.vote,
+    strategy: ConflictResolution.reject,
+    timeout: Duration(seconds: 10),
+  ),
+  QueueOperationType.profileUpdate: ConflictRule(
+    operationType: QueueOperationType.profileUpdate, 
+    strategy: ConflictResolution.latestWins,
+    timeout: Duration(seconds: 15),
+  ),
+};
+
+final config = SyncConfig(
+  conflictRules: customRules,
+  // ... other settings
+);
+```
+
+### Security Features
+
+#### Encryption Management
+```dart
+// Key rotation (automatic monthly)
+final encryptionService = GetIt.instance<OfflineEncryptionService>();
+
+// Manual key rotation
+await encryptionService.rotateKeys();
+
+// Cleanup old keys
+await encryptionService.cleanupOldKeys();
+
+// Secure deletion
+await encryptionService.secureDeleteKeys();
+```
+
+#### Data Integrity
+- All queued operations are encrypted with AES-256-GCM
+- Payload integrity verified with SHA-256 hashes
+- Secure key storage using Flutter Secure Storage
+- Automatic key rotation every 30 days
+- Device fingerprinting for additional security
+
 ## 🧪 Testing
 
 The application includes comprehensive test coverage for all notification and timetable functionality.
@@ -414,6 +687,45 @@ flutter test test/integration/
 
 # Run timetable integration tests
 flutter test test/integration/timetable_integration_test.dart
+
+# Run offline sync integration tests
+flutter test test/integration/offline_sync_integration_test.dart
+```
+
+### Offline Module Tests
+
+#### Unit Tests
+```bash
+# Run offline repository tests
+flutter test test/unit/core/offline/repositories/
+
+# Run encryption service tests  
+flutter test test/unit/core/offline/encryption/
+
+# Run sync orchestrator tests
+flutter test test/unit/core/offline/services/
+```
+
+#### Integration Tests
+```bash
+# Test complete offline workflow
+flutter test test/integration/offline_sync_integration_test.dart
+
+# This tests:
+# - Queue operations while offline
+# - Network state transitions  
+# - Automatic sync triggering
+# - Conflict resolution
+# - Batch processing
+# - Retry mechanisms
+```
+
+#### Widget Tests
+```bash
+# Test offline UI components
+flutter test test/widget/core/offline/
+
+# Tests offline status indicators and sync controls
 ```
 
 ### Test Coverage Overview
