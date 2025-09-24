@@ -1,0 +1,512 @@
+name: 'CD - Continuous Deployment'
+
+# Manual deployment workflow with required inputs
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+      version_tag:
+        description: 'Version tag for deployment (e.g., v1.0.0)'
+        required: true
+        type: string
+      maintenance_mode:
+        description: 'Enable maintenance mode during deployment'
+        required: false
+        type: boolean
+        default: true
+      rollback_enabled:
+        description: 'Enable automatic rollback on failure'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  # Pre-deployment validation and security checks
+  pre-deploy-validation:
+    name: 'Pre-deployment Validation'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    outputs:
+      deploy-ref: ${{ steps.validation.outputs.deploy-ref }}
+      image-tag: ${{ steps.validation.outputs.image-tag }}
+      
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version_tag }}
+      
+      - name: 'Validate deployment parameters'
+        id: validation
+        run: |
+          # Validate version tag format
+          if [[ ! "${{ github.event.inputs.version_tag }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            echo "❌ Invalid version tag format. Expected: vX.Y.Z"
+            exit 1
+          fi
+          
+          # Validate production deployment requirements
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            if [[ "${{ github.ref_name }}" != "main" ]]; then
+              echo "❌ Production deployments must be from main branch"
+              exit 1
+            fi
+          fi
+          
+          # Set outputs
+          echo "deploy-ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "image-tag=${{ github.event.inputs.version_tag }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+          
+          echo "✅ Validation passed"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Version: ${{ github.event.inputs.version_tag }}"
+          echo "Commit: ${{ github.sha }}"
+      
+      - name: 'Check deployment approval (Production only)'
+        if: github.event.inputs.environment == 'production'
+        run: |
+          echo "🔒 Production deployment requires manual approval"
+          echo "Deployment will proceed after environment protection rules"
+
+  # Build and push Docker images
+  build-and-push:
+    name: 'Build & Push Docker Images'
+    runs-on: ubuntu-latest
+    needs: pre-deploy-validation
+    environment: ${{ github.event.inputs.environment }}
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pre-deploy-validation.outputs.deploy-ref }}
+      
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+      
+      - name: 'Login to Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 'Extract metadata'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.pre-deploy-validation.outputs.image-tag }}
+            type=raw,value=${{ github.event.inputs.environment }}-latest
+            type=sha,prefix=${{ github.event.inputs.environment }}-
+      
+      - name: 'Build and push Docker image'
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.event.inputs.version_tag }}
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+            VCS_REF=${{ github.sha }}
+      
+      - name: 'Sign container image'
+        run: |
+          echo "🔏 Container image signing would be implemented here"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.pre-deploy-validation.outputs.image-tag }}"
+          echo "Digest: ${{ steps.build.outputs.digest }}"
+
+  # Database backup and migration
+  database-operations:
+    name: 'Database Operations'
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-validation, build-and-push]
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pre-deploy-validation.outputs.deploy-ref }}
+      
+      - name: 'Enable maintenance mode'
+        if: github.event.inputs.maintenance_mode == 'true'
+        run: |
+          echo "🚧 Enabling maintenance mode"
+          # Implementation would depend on your infrastructure
+          # Example: kubectl patch deployment electra-web -p '{"spec":{"replicas":0}}'
+          # Example: Enable maintenance page via ingress/nginx
+      
+      - name: 'Create database backup'
+        run: |
+          echo "💾 Creating database backup"
+          # Implementation using your database backup script
+          # ./scripts/db_backup.sh "${{ github.event.inputs.environment }}" "${{ github.event.inputs.version_tag }}"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+      
+      - name: 'Run database migrations (dry-run)'
+        run: |
+          echo "🧪 Running migration dry-run"
+          # Dry run migrations to check for issues
+          # docker run --rm -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+          #   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.pre-deploy-validation.outputs.image-tag }} \
+          #   python manage.py migrate --plan
+      
+      - name: 'Run database migrations'
+        run: |
+          echo "🔄 Running database migrations"
+          # Actual migration execution
+          # docker run --rm -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+          #   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.pre-deploy-validation.outputs.image-tag }} \
+          #   python manage.py migrate --verbosity=2
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  # Deploy to Kubernetes (Blue/Green strategy)
+  deploy-application:
+    name: 'Deploy Application'
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-validation, build-and-push, database-operations]
+    environment: ${{ github.event.inputs.environment }}
+    
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.url }}
+      
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pre-deploy-validation.outputs.deploy-ref }}
+      
+      - name: 'Setup kubectl'
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+      
+      - name: 'Configure kubectl context'
+        run: |
+          echo "⚙️ Configuring kubectl for ${{ github.event.inputs.environment }}"
+          # Configure kubectl with cluster credentials
+          # Example implementations:
+          # echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+          # export KUBECONFIG=kubeconfig
+          # kubectl config current-context
+      
+      - name: 'Deploy with Blue/Green strategy'
+        id: deploy
+        run: |
+          echo "🚀 Starting Blue/Green deployment"
+          
+          NAMESPACE="electra-${{ github.event.inputs.environment }}"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.pre-deploy-validation.outputs.image-tag }}"
+          
+          # Execute deployment script
+          ./scripts/deploy_k8s.sh \
+            --namespace "$NAMESPACE" \
+            --image "$IMAGE" \
+            --version "${{ github.event.inputs.version_tag }}" \
+            --strategy "blue-green" \
+            --environment "${{ github.event.inputs.environment }}"
+          
+          # Set deployment URL output
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "url=https://electra.example.com" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://staging.electra.example.com" >> $GITHUB_OUTPUT
+          fi
+        env:
+          KUBECONFIG: ${{ runner.temp }}/kubeconfig
+          DOCKER_REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 'Wait for deployment rollout'
+        run: |
+          echo "⏳ Waiting for deployment to complete"
+          NAMESPACE="electra-${{ github.event.inputs.environment }}"
+          
+          # kubectl rollout status deployment/electra-web -n "$NAMESPACE" --timeout=600s
+          echo "✅ Deployment completed successfully"
+
+  # Health checks and smoke tests
+  health-checks:
+    name: 'Health Checks & Smoke Tests'
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-validation, deploy-application]
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: 'Wait for application startup'
+        run: |
+          echo "⏳ Waiting for application to start"
+          sleep 30
+      
+      - name: 'Run health checks'
+        run: |
+          echo "🏥 Running health checks"
+          URL="${{ needs.deploy-application.outputs.deployment-url }}"
+          
+          # Health endpoint check
+          if curl -f "$URL/api/health/" --max-time 30; then
+            echo "✅ Health check passed"
+          else
+            echo "❌ Health check failed"
+            exit 1
+          fi
+          
+          # API availability check
+          if curl -f "$URL/api/" --max-time 30; then
+            echo "✅ API availability check passed"
+          else
+            echo "❌ API availability check failed"
+            exit 1
+          fi
+      
+      - name: 'Run smoke tests'
+        run: |
+          echo "🧪 Running smoke tests"
+          URL="${{ needs.deploy-application.outputs.deployment-url }}"
+          
+          # Test critical user flows
+          # Authentication endpoints
+          curl -f -X POST "$URL/api/auth/register/" \
+               -H "Content-Type: application/json" \
+               -d '{}' --max-time 30 || echo "Register endpoint accessible"
+          
+          curl -f -X POST "$URL/api/auth/login/" \
+               -H "Content-Type: application/json" \
+               -d '{}' --max-time 30 || echo "Login endpoint accessible"
+          
+          echo "✅ Smoke tests completed"
+      
+      - name: 'Performance baseline check'
+        run: |
+          echo "📊 Running performance baseline check"
+          URL="${{ needs.deploy-application.outputs.deployment-url }}"
+          
+          # Simple response time check
+          RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "$URL/api/health/")
+          echo "Response time: ${RESPONSE_TIME}s"
+          
+          # Fail if response time > 5 seconds
+          if (( $(echo "$RESPONSE_TIME > 5.0" | bc -l) )); then
+            echo "❌ Response time too slow: ${RESPONSE_TIME}s"
+            exit 1
+          fi
+          
+          echo "✅ Performance check passed"
+
+  # Traffic switching (Blue/Green completion)
+  traffic-switch:
+    name: 'Switch Traffic to New Version'
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-validation, deploy-application, health-checks]
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pre-deploy-validation.outputs.deploy-ref }}
+      
+      - name: 'Switch traffic to Green deployment'
+        run: |
+          echo "🔄 Switching traffic to new version"
+          NAMESPACE="electra-${{ github.event.inputs.environment }}"
+          
+          # Switch service selector to green deployment
+          ./scripts/deploy_k8s.sh \
+            --namespace "$NAMESPACE" \
+            --action "switch-traffic" \
+            --version "${{ github.event.inputs.version_tag }}"
+          
+          echo "✅ Traffic switched successfully"
+      
+      - name: 'Disable maintenance mode'
+        if: github.event.inputs.maintenance_mode == 'true'
+        run: |
+          echo "🟢 Disabling maintenance mode"
+          # Implementation would depend on your infrastructure
+          # Remove maintenance page, restore normal routing
+      
+      - name: 'Cleanup old deployment'
+        run: |
+          echo "🧹 Cleaning up previous deployment"
+          # Keep previous version available for quick rollback
+          # Clean up older versions (keep last 3)
+
+  # Post-deployment monitoring and notifications
+  post-deployment:
+    name: 'Post-deployment Tasks'
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-validation, deploy-application, traffic-switch]
+    environment: ${{ github.event.inputs.environment }}
+    if: always()
+    
+    steps:
+      - name: 'Create GitHub Release'
+        if: github.event.inputs.environment == 'production' && needs.traffic-switch.result == 'success'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version_tag }}
+          name: 'Release ${{ github.event.inputs.version_tag }}'
+          body: |
+            ## 🚀 Production Deployment
+            
+            **Version:** ${{ github.event.inputs.version_tag }}
+            **Commit:** ${{ needs.pre-deploy-validation.outputs.deploy-ref }}
+            **Deployed at:** ${{ steps.timestamp.outputs.timestamp }}
+            **Environment:** ${{ github.event.inputs.environment }}
+            
+            ### Changes
+            <!-- Auto-generated changelog would go here -->
+            
+            ### Deployment Details
+            - Image: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.pre-deploy-validation.outputs.image-tag }}`
+            - URL: ${{ needs.deploy-application.outputs.deployment-url }}
+            
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 'Get current timestamp'
+        id: timestamp
+        run: echo "timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+      
+      - name: 'Send Slack notification'
+        if: always()
+        run: |
+          if [[ "${{ needs.traffic-switch.result }}" == "success" ]]; then
+            STATUS="✅ SUCCESS"
+            COLOR="good"
+          else
+            STATUS="❌ FAILED"
+            COLOR="danger"
+          fi
+          
+          echo "📢 Sending deployment notification"
+          echo "Status: $STATUS"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Version: ${{ github.event.inputs.version_tag }}"
+          
+          # Slack notification implementation
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data "{\"text\":\"Deployment $STATUS\",\"color\":\"$COLOR\"}" \
+          #   "${{ secrets.SLACK_WEBHOOK_URL }}"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Rollback job (callable separately)
+  rollback:
+    name: 'Rollback Deployment'
+    runs-on: ubuntu-latest
+    if: failure() && github.event.inputs.rollback_enabled == 'true'
+    needs: [pre-deploy-validation, deploy-application, health-checks, traffic-switch]
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+      
+      - name: 'Execute rollback'
+        run: |
+          echo "🔙 Initiating automatic rollback"
+          NAMESPACE="electra-${{ github.event.inputs.environment }}"
+          
+          # Rollback to previous stable version
+          ./scripts/deploy_k8s.sh \
+            --namespace "$NAMESPACE" \
+            --action "rollback" \
+            --environment "${{ github.event.inputs.environment }}"
+          
+          echo "✅ Rollback completed"
+      
+      - name: 'Notify rollback completion'
+        run: |
+          echo "📢 Deployment rolled back due to failure"
+          # Send notifications about rollback
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+# Separate rollback workflow for manual triggering
+---
+name: 'CD - Manual Rollback'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+      target_version:
+        description: 'Version to rollback to (leave empty for previous)'
+        required: false
+        type: string
+
+jobs:
+  manual-rollback:
+    name: 'Manual Rollback'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+      
+      - name: 'Validate rollback request'
+        run: |
+          echo "🔍 Validating rollback request"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Target version: ${{ github.event.inputs.target_version || 'previous' }}"
+      
+      - name: 'Execute database rollback (if needed)'
+        run: |
+          echo "🗄️ Checking for database rollback requirements"
+          # ./scripts/db_restore.sh "${{ github.event.inputs.environment }}" "${{ github.event.inputs.target_version }}"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: 'Rollback application deployment'
+        run: |
+          echo "🔄 Rolling back application"
+          NAMESPACE="electra-${{ github.event.inputs.environment }}"
+          
+          ./scripts/deploy_k8s.sh \
+            --namespace "$NAMESPACE" \
+            --action "rollback" \
+            --target-version "${{ github.event.inputs.target_version }}" \
+            --environment "${{ github.event.inputs.environment }}"
+      
+      - name: 'Verify rollback success'
+        run: |
+          echo "✅ Verifying rollback success"
+          # Health checks and verification

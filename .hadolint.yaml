@@ -1,0 +1,34 @@
+# Hadolint configuration for Dockerfile linting
+# https://github.com/hadolint/hadolint
+
+# Ignore specific rules
+ignored:
+  # DL3008: Pin versions in apt get install
+  - DL3008
+  # DL3009: Delete the apt-get lists after installing something
+  - DL3009
+
+# Override default severity levels
+override:
+  # Make these errors instead of warnings
+  DL3003: error  # Use WORKDIR to switch to a directory
+  DL3020: error  # Use COPY instead of ADD for files and folders
+  DL3025: error  # Use arguments JSON notation for CMD and ENTRYPOINT arguments
+
+# Treat these as warnings instead of errors
+  DL3015: warning  # Avoid additional packages by specifying `--no-install-recommends`
+  DL3018: warning  # Pin versions in pip
+
+# Trusted registries (for base images)
+trustedRegistries:
+  - docker.io
+  - python
+
+# Allowed labels
+label-schema:
+  author: text
+  version: text
+  description: text
+
+# Custom rules for security
+failure-threshold: warning
