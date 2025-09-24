@@ -6,13 +6,14 @@ import 'package:isar/isar.dart';
 import 'core/di/injection_container.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'core/storage/storage_service.dart';
 import 'shared/utils/logger.dart';
 
 /// Main entry point of the Electra Flutter application
 ///
-/// Initializes all dependencies, storage, and starts the app with proper
-/// error handling and logging configuration.
+/// Initializes all dependencies, storage, theme system, and starts the app 
+/// with proper error handling and logging configuration.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -26,6 +27,9 @@ void main() async {
 
     // Initialize dependency injection
     await configureDependencies();
+
+    // Initialize theme system
+    await _initializeThemeSystem();
 
     runApp(const ProviderScope(child: ElectraApp()));
   } catch (error, stackTrace) {
@@ -52,43 +56,137 @@ Future<void> _initializeStorage() async {
   }
 }
 
-/// Main application widget with theme, routing, and error handling
-class ElectraApp extends ConsumerWidget {
+/// Initialize theme system
+Future<void> _initializeThemeSystem() async {
+  try {
+    final themeController = getIt<ThemeController>();
+    await themeController.initialize();
+    
+    AppLogger.info('Theme system initialized successfully');
+  } catch (error, stackTrace) {
+    AppLogger.error('Failed to initialize theme system', error, stackTrace);
+    // Theme system failure is not critical, so we don't rethrow
+  }
+}
+
+/// Main application widget with enhanced theme system, routing, and error handling
+class ElectraApp extends ConsumerStatefulWidget {
   const ElectraApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ElectraApp> createState() => _ElectraAppState();
+}
+
+class _ElectraAppState extends ConsumerState<ElectraApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Ensure theme controller is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureThemeController();
+    });
+  }
+
+  void _ensureThemeController() {
+    try {
+      final themeController = getIt<ThemeController>();
+      if (!themeController.initialized) {
+        themeController.initialize();
+      }
+    } catch (e) {
+      AppLogger.error('Failed to ensure theme controller', e, null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
-    final themeMode = ref.watch(themeModeProvider);
+    
+    // Try to use new theme system, fallback to legacy
+    Widget app;
+    try {
+      final themeController = getIt<ThemeController>();
+      app = Consumer(
+        builder: (context, ref, _) {
+          // Override the provider with actual instance
+          return ProviderScope(
+            overrides: [
+              themeControllerProvider.overrideWith((ref) => themeController),
+            ],
+            child: Consumer(
+              builder: (context, ref, _) {
+                final controller = ref.watch(themeControllerProvider);
+                final themeData = controller.currentThemeData;
+                
+                return MaterialApp.router(
+                  title: 'Electra - Secure Digital Voting',
+                  debugShowCheckedModeBanner: false,
 
-    return MaterialApp.router(
-      title: 'Electra - Secure Digital Voting',
-      debugShowCheckedModeBanner: false,
+                  // Enhanced theme configuration
+                  theme: themeData,
+                  darkTheme: themeData, // Use same theme data as it handles brightness internally
+                  themeMode: ThemeMode.light, // Let our theme controller handle this
 
-      // Theme configuration
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
+                  // Router configuration
+                  routerConfig: router,
 
-      // Router configuration
-      routerConfig: router,
+                  // Localization
+                  supportedLocales: const [Locale('en', 'US')],
 
-      // Localization
-      supportedLocales: const [Locale('en', 'US')],
-
-      // Error handling
-      builder: (context, child) {
-        ErrorWidget.builder = (FlutterErrorDetails details) {
-          AppLogger.error(
-            'Widget error occurred',
-            details.exception,
-            details.stack,
+                  // Error handling
+                  builder: (context, child) {
+                    ErrorWidget.builder = (FlutterErrorDetails details) {
+                      AppLogger.error(
+                        'Widget error occurred',
+                        details.exception,
+                        details.stack,
+                      );
+                      return ErrorDisplay(error: details.exception);
+                    };
+                    return child ?? const SizedBox.shrink();
+                  },
+                );
+              },
+            ),
           );
-          return ErrorDisplay(error: details.exception);
-        };
-        return child ?? const SizedBox.shrink();
-      },
-    );
+        },
+      );
+    } catch (e) {
+      // Fallback to legacy theme system
+      AppLogger.warning('Using legacy theme system due to error: $e');
+      final themeMode = ref.watch(themeModeProvider);
+      
+      app = MaterialApp.router(
+        title: 'Electra - Secure Digital Voting',
+        debugShowCheckedModeBanner: false,
+
+        // Legacy theme configuration
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeMode,
+
+        // Router configuration
+        routerConfig: router,
+
+        // Localization
+        supportedLocales: const [Locale('en', 'US')],
+
+        // Error handling
+        builder: (context, child) {
+          ErrorWidget.builder = (FlutterErrorDetails details) {
+            AppLogger.error(
+              'Widget error occurred',
+              details.exception,
+              details.stack,
+            );
+            return ErrorDisplay(error: details.exception);
+          };
+          return child ?? const SizedBox.shrink();
+        },
+      );
+    }
+
+    return app;
   }
 }
 

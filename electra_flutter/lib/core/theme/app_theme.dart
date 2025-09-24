@@ -2,88 +2,107 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// KWASU University Branding Colors
-///
-/// Primary brand colors for Kwara State University, following
-/// the official brand guidelines and accessibility standards.
+import 'app_colors.dart';
+import 'theme_config.dart';
+import 'theme_controller.dart';
+
+// Re-export for backward compatibility
+export 'app_colors.dart';
+export 'theme_config.dart';
+export 'theme_controller.dart';
+
+/// Legacy KWASUColors class for backward compatibility
+/// @deprecated Use AppColors instead
 class KWASUColors {
-  static const Color primaryBlue = Color(0xFF1E3A8A); // KWASU Primary Blue
-  static const Color secondaryGreen = Color(0xFF10B981); // KWASU Green
-  static const Color accentGold = Color(0xFFF59E0B); // KWASU Gold
-  static const Color lightBlue = Color(0xFF3B82F6);
-  static const Color darkBlue = Color(0xFF1E40AF);
+  static const Color primaryBlue = AppColors.kwasuBlue;
+  static const Color secondaryGreen = AppColors.kwasuSecondary;
+  static const Color accentGold = AppColors.kwasuGold;
+  static const Color lightBlue = AppColors.kwasuLightBlue;
+  static const Color darkBlue = AppColors.kwasuBlue;
 
   // Semantic colors
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
+  static const Color success = AppColors.success;
+  static const Color warning = AppColors.warning;
+  static const Color error = AppColors.error;
+  static const Color info = AppColors.info;
 
   // Neutral colors
-  static const Color white = Color(0xFFFFFFFF);
-  static const Color black = Color(0xFF000000);
-  static const Color grey50 = Color(0xFFF9FAFB);
-  static const Color grey100 = Color(0xFFF3F4F6);
-  static const Color grey200 = Color(0xFFE5E7EB);
-  static const Color grey300 = Color(0xFFD1D5DB);
-  static const Color grey400 = Color(0xFF9CA3AF);
-  static const Color grey500 = Color(0xFF6B7280);
-  static const Color grey600 = Color(0xFF4B5563);
-  static const Color grey700 = Color(0xFF374151);
-  static const Color grey800 = Color(0xFF1F2937);
-  static const Color grey900 = Color(0xFF111827);
+  static const Color white = AppColors.white;
+  static const Color black = AppColors.black;
+  static const Color grey50 = AppColors.grey50;
+  static const Color grey100 = AppColors.grey100;
+  static const Color grey200 = AppColors.grey200;
+  static const Color grey300 = AppColors.grey300;
+  static const Color grey400 = AppColors.grey400;
+  static const Color grey500 = AppColors.grey500;
+  static const Color grey600 = AppColors.grey600;
+  static const Color grey700 = AppColors.grey700;
+  static const Color grey800 = AppColors.grey800;
+  static const Color grey900 = AppColors.grey900;
 }
 
-/// Application theme configuration with KWASU branding
+/// Legacy AppTheme class for backward compatibility
+/// @deprecated Use ThemeController and related providers instead
 class AppTheme {
   // Private constructor to prevent instantiation
   AppTheme._();
 
   /// Light theme configuration
+  /// @deprecated Use ThemeController.currentThemeData instead
   static ThemeData get lightTheme {
+    final colorScheme = AppColors.getColorScheme(AppThemeMode.light);
+    return _buildLegacyTheme(colorScheme, AppThemeMode.light);
+  }
+
+  /// Dark theme configuration
+  /// @deprecated Use ThemeController.currentThemeData instead
+  static ThemeData get darkTheme {
+    final colorScheme = AppColors.getColorScheme(AppThemeMode.dark);
+    return _buildLegacyTheme(colorScheme, AppThemeMode.dark);
+  }
+
+  /// Build legacy theme for backward compatibility
+  static ThemeData _buildLegacyTheme(ColorScheme colorScheme, AppThemeMode themeMode) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+    
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-
-      // Color scheme
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: KWASUColors.primaryBlue,
-        brightness: Brightness.light,
-        primary: KWASUColors.primaryBlue,
-        secondary: KWASUColors.secondaryGreen,
-        tertiary: KWASUColors.accentGold,
-        error: KWASUColors.error,
-        surface: KWASUColors.white,
-        background: KWASUColors.grey50,
-      ),
-
+      colorScheme: colorScheme,
+      brightness: colorScheme.brightness,
+      
       // App bar theme
-      appBarTheme: const AppBarTheme(
-        backgroundColor: KWASUColors.primaryBlue,
-        foregroundColor: KWASUColors.white,
+      appBarTheme: AppBarTheme(
+        backgroundColor: themeMode == AppThemeMode.dark 
+            ? KWASUColors.grey800 
+            : (themeMode == AppThemeMode.light ? colorScheme.surface : KWASUColors.primaryBlue),
+        foregroundColor: themeMode == AppThemeMode.dark || themeMode == AppThemeMode.light 
+            ? colorScheme.onSurface 
+            : KWASUColors.white,
         elevation: 0,
         centerTitle: true,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
         titleTextStyle: TextStyle(
-          color: KWASUColors.white,
+          color: themeMode == AppThemeMode.dark || themeMode == AppThemeMode.light 
+              ? colorScheme.onSurface 
+              : KWASUColors.white,
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          fontFamily: 'KWASU',
+          fontFamily: TypographyConfig.fontFamily,
         ),
       ),
-
+      
       // Elevated button theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: KWASUColors.primaryBlue,
-          foregroundColor: KWASUColors.white,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'KWASU',
+            fontFamily: TypographyConfig.fontFamily,
           ),
         ),
       ),
@@ -91,14 +110,14 @@ class AppTheme {
       // Outlined button theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: KWASUColors.primaryBlue,
-          side: const BorderSide(color: KWASUColors.primaryBlue),
+          foregroundColor: colorScheme.primary,
+          side: BorderSide(color: colorScheme.primary),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            fontFamily: 'KWASU',
+            fontFamily: TypographyConfig.fontFamily,
           ),
         ),
       ),
@@ -106,12 +125,12 @@ class AppTheme {
       // Text button theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: KWASUColors.primaryBlue,
+          foregroundColor: colorScheme.primary,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            fontFamily: 'KWASU',
+            fontFamily: TypographyConfig.fontFamily,
           ),
         ),
       ),
@@ -119,182 +138,74 @@ class AppTheme {
       // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: KWASUColors.white,
+        fillColor: colorScheme.surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.grey300),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.grey300),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: KWASUColors.primaryBlue,
+          borderSide: BorderSide(
+            color: colorScheme.primary,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.error),
+          borderSide: BorderSide(color: colorScheme.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.error, width: 2),
+          borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
-        labelStyle: const TextStyle(
-          color: KWASUColors.grey600,
+        labelStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
-        hintStyle: const TextStyle(color: KWASUColors.grey400, fontSize: 14),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withOpacity(0.6), fontSize: 14),
       ),
 
       // Card theme
       cardTheme: CardTheme(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: KWASUColors.white,
+        color: colorScheme.surface,
       ),
 
       // Bottom navigation bar theme
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: KWASUColors.white,
-        selectedItemColor: KWASUColors.primaryBlue,
-        unselectedItemColor: KWASUColors.grey500,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
 
       // Typography
-      textTheme: _buildTextTheme(Brightness.light),
+      textTheme: _buildTextTheme(colorScheme.brightness),
 
       // Scaffold background
-      scaffoldBackgroundColor: KWASUColors.grey50,
-    );
-  }
-
-  /// Dark theme configuration
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-
-      // Color scheme
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: KWASUColors.primaryBlue,
-        brightness: Brightness.dark,
-        primary: KWASUColors.lightBlue,
-        secondary: KWASUColors.secondaryGreen,
-        tertiary: KWASUColors.accentGold,
-        error: KWASUColors.error,
-        surface: KWASUColors.grey800,
-        background: KWASUColors.grey900,
-      ),
-
-      // App bar theme
-      appBarTheme: const AppBarTheme(
-        backgroundColor: KWASUColors.grey800,
-        foregroundColor: KWASUColors.white,
-        elevation: 0,
-        centerTitle: true,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: TextStyle(
-          color: KWASUColors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'KWASU',
-        ),
-      ),
-
-      // Elevated button theme
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: KWASUColors.lightBlue,
-          foregroundColor: KWASUColors.white,
-          elevation: 2,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'KWASU',
-          ),
-        ),
-      ),
-
-      // Input decoration theme
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: KWASUColors.grey800,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.grey600),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.grey600),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.lightBlue, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: KWASUColors.error, width: 2),
-        ),
-        labelStyle: const TextStyle(
-          color: KWASUColors.grey300,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        hintStyle: const TextStyle(color: KWASUColors.grey500, fontSize: 14),
-      ),
-
-      // Card theme
-      cardTheme: CardTheme(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: KWASUColors.grey800,
-      ),
-
-      // Bottom navigation bar theme
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: KWASUColors.grey800,
-        selectedItemColor: KWASUColors.lightBlue,
-        unselectedItemColor: KWASUColors.grey400,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-      ),
-
-      // Typography
-      textTheme: _buildTextTheme(Brightness.dark),
-
-      // Scaffold background
-      scaffoldBackgroundColor: KWASUColors.grey900,
+      scaffoldBackgroundColor: AppColors.getBackgroundColor(themeMode),
     );
   }
 
   /// Build text theme for the given brightness
+  /// @deprecated Use ThemeController._buildTextTheme instead
   static TextTheme _buildTextTheme(Brightness brightness) {
     final Color textColor = brightness == Brightness.light
         ? KWASUColors.grey900
         : KWASUColors.grey100;
 
-    const String fontFamily = 'KWASU';
+    const String fontFamily = TypographyConfig.fontFamily;
 
     return TextTheme(
       displayLarge: TextStyle(
@@ -391,5 +302,6 @@ class AppTheme {
   }
 }
 
-/// Theme mode provider for state management
+/// Theme mode provider for legacy support
+/// @deprecated Use currentThemeProvider instead
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
