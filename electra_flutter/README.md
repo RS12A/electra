@@ -20,12 +20,13 @@ lib/
 │   ├── voting/                   # Voting dashboard, cast vote, verification
 │   ├── admin_dashboard/          # Electoral committee admin panel
 │   ├── analytics/                # Reports and analytics dashboard
-│   ├── notifications/            # System and election notifications
+│   ├── notifications/            # System and election notifications with timetable
 │   └── theme/                    # Theme management
 ├── shared/                       # Shared components
 │   ├── constants/               # App constants and configuration
 │   ├── extensions/              # Dart/Flutter extensions
 │   ├── utils/                   # Utility functions and helpers
+│   ├── theme/                   # KWASU theme system with neomorphic design
 │   └── widgets/                 # Reusable UI components
 └── main.dart                    # Application entry point
 ```
@@ -64,7 +65,42 @@ Each feature module follows Clean Architecture layers:
 - **Data Export**: CSV, PDF, and Excel export capabilities
 - **Audit Trails**: Comprehensive logging and verification
 
-### 🔔 **Notifications**
+### 🔔 **Notifications & Timetable System**
+
+#### **Advanced Notifications**
+- **Smart Categorization**: Elections, system, security, announcements, voting reminders, deadlines
+- **Priority Levels**: Low, normal, high, critical with visual indicators and urgency animations
+- **Interactive Actions**: Swipe-to-read, swipe-to-dismiss, custom notification actions
+- **Rich Content**: Image support, metadata chips, expandable content for long messages
+- **Real-time Updates**: Live notification streaming with offline queuing
+- **Firebase Cloud Messaging**: Push notifications with topic subscriptions and deep linking
+- **Advanced Filtering**: Filter by type, priority, status with search functionality
+- **Bulk Operations**: Mark all as read, clear all notifications
+
+#### **Interactive Timetable**
+- **Multiple Calendar Views**: Month, week, and agenda views with smooth transitions
+- **Event Management**: Elections, deadlines, voting periods, system maintenance
+- **Countdown Timers**: Real-time countdowns for active elections with urgency indicators
+- **Event Scheduling**: Create, edit, and manage election events
+- **Smart Reminders**: Configurable notifications 1-24 hours before events
+- **Color-coded Events**: Visual distinction by event type (elections=green, deadlines=orange, etc.)
+- **Offline-first Support**: Local caching with background sync when online
+- **Event Details**: Rich event information with location, description, and related election data
+
+#### **Key Features**
+- **Neomorphic Design**: Modern elevated UI following KWASU branding guidelines
+- **Gesture Support**: Swipe gestures for quick actions and navigation
+- **Accessibility**: Full screen reader support and keyboard navigation
+- **Performance**: Optimized rendering with lazy loading and efficient animations
+- **Cross-platform**: Consistent experience across iOS and Android
+
+#### **Integration Points**
+- **Backend APIs**: Connect with Election, Ballot, and Notifications services
+- **Firebase FCM**: Secure push notification delivery with topic management
+- **Deep Linking**: Navigate directly to relevant content from notifications
+- **Sync Management**: Intelligent offline/online synchronization with conflict resolution
+
+### 🔔 **Legacy Notifications**
 - **Real-time Alerts**: Election updates and system notifications
 - **Categorized Notifications**: Elections, system, security alerts
 - **Action Items**: Interactive notifications with quick actions
@@ -177,6 +213,39 @@ Update the following configuration files:
 static const String baseUrl = 'https://your-api-server.com:8000';
 ```
 
+#### Firebase Configuration (for Notifications)
+1. **Add Firebase configuration files:**
+   - `android/app/google-services.json`
+   - `ios/Runner/GoogleService-Info.plist`
+
+2. **Update Firebase options:**
+   ```dart
+   // lib/firebase_options.dart
+   // Generated from FlutterFire CLI - add your project configuration
+   ```
+
+3. **Configure notification channels (Android):**
+   ```dart
+   // Channels are automatically created by FCMService:
+   // - election_notifications (High importance)
+   // - system_notifications (Default importance)  
+   // - security_notifications (Max importance)
+   // - announcement_notifications (High importance)
+   ```
+
+#### Notification Preferences Configuration
+```dart
+// Default notification preferences
+final defaultPreferences = <NotificationType, bool>{
+  NotificationType.election: true,
+  NotificationType.votingReminder: true,
+  NotificationType.deadline: true, 
+  NotificationType.security: true,
+  NotificationType.system: false,
+  NotificationType.announcement: true,
+};
+```
+
 #### Asset Configuration
 Add your university assets:
 ```yaml
@@ -193,27 +262,208 @@ flutter:
           weight: 700
 ```
 
+## 📱 Notifications & Timetable Setup
+
+### Quick Start
+```dart
+// Initialize FCM service
+await FCMServiceProvider().initialize();
+
+// Load notifications
+ref.read(notificationProvider.notifier).loadNotifications();
+
+// Load timetable events
+ref.read(timetableProvider.notifier).loadEvents();
+
+// Start countdown timers
+ref.read(countdownProvider.notifier).startCountdowns();
+```
+
+### Usage Examples
+
+#### Loading Notifications
+```dart
+// In a widget
+final notificationState = ref.watch(notificationProvider);
+
+// Load notifications with filters
+await ref.read(notificationProvider.notifier).filterNotifications(
+  types: {NotificationType.election, NotificationType.deadline},
+  priority: NotificationPriority.high,
+);
+
+// Mark notification as read
+await ref.read(notificationProvider.notifier).markNotificationAsRead(id);
+```
+
+#### Managing Timetable Events
+```dart
+// Load events for current month
+final now = DateTime.now();
+await ref.read(timetableProvider.notifier).loadMonth(now);
+
+// Create new event
+await ref.read(eventFormProvider.notifier).createNewEvent(
+  type: EventType.electionStart,
+  title: 'Student Election Begins',
+  description: 'Presidential election voting opens',
+  startDateTime: DateTime.now().add(Duration(days: 1)),
+  endDateTime: DateTime.now().add(Duration(days: 8)),
+);
+
+// Subscribe to event notifications
+await ref.read(eventNotificationProvider.notifier)
+    .subscribeToEventNotifications(eventId, Duration(hours: 1));
+```
+
+#### Handling Push Notifications
+```dart
+// Listen to incoming notifications
+FCMService.instance.onNotificationReceived.listen((notification) {
+  // Handle foreground notification
+  ref.read(notificationProvider.notifier).addNotification(notification);
+});
+
+// Handle notification taps
+FCMService.instance.onNotificationOpened.listen((notification) {
+  // Navigate to relevant screen
+  context.go('/notifications/${notification.id}');
+});
+```
+
+### Event Flow Examples
+
+#### Election Workflow
+1. **Registration Opens** → Notification sent to all eligible users
+2. **48 Hours Before Voting** → Voting reminder notifications
+3. **Voting Period Starts** → Real-time countdown begins
+4. **6 Hours Before Deadline** → Urgent reminder for non-voters
+5. **Voting Ends** → Results announcement notification
+
+#### System Maintenance Flow
+1. **Maintenance Scheduled** → Advance notice to all users
+2. **1 Hour Before** → Final warning notification
+3. **Maintenance Begins** → System status notification
+4. **Maintenance Complete** → Service restored notification
+
+### API Integration
+
+#### Notification Endpoints
+```dart
+// Get notifications with pagination
+GET /api/notifications?page=1&limit=20&type=election&priority=high
+
+// Mark notification as read
+PATCH /api/notifications/{id}/read
+
+// Subscribe to push notifications
+POST /api/notifications/subscribe
+{
+  "fcm_token": "device_token",
+  "topics": ["elections", "deadlines"]
+}
+```
+
+#### Timetable Endpoints
+```dart  
+// Get events for date range
+GET /api/timetable/events?start_date=2024-01-01&end_date=2024-01-31
+
+// Create new event
+POST /api/timetable/events
+{
+  "title": "Election Registration",
+  "type": "election_start", 
+  "start_datetime": "2024-01-15T09:00:00Z",
+  "end_datetime": "2024-01-22T17:00:00Z"
+}
+
+// Subscribe to event reminders
+POST /api/timetable/events/{id}/reminders
+{
+  "reminder_time": "1h"
+}
+```
+
 ## 🧪 Testing
+
+The application includes comprehensive test coverage for all notification and timetable functionality.
 
 ### Unit Tests
 ```bash
+# Run all unit tests
 flutter test
+
+# Run specific feature tests
+flutter test test/unit/features/notifications/
 ```
 
 ### Widget Tests
 ```bash
+# Run all widget tests
 flutter test test/widget/
+
+# Run notification widget tests specifically
+flutter test test/widget/features/notifications/presentation/widgets/
 ```
 
 ### Integration Tests
 ```bash
-flutter test integration_test/
+# Run all integration tests
+flutter test test/integration/
+
+# Run timetable integration tests
+flutter test test/integration/timetable_integration_test.dart
 ```
+
+### Test Coverage Overview
+
+#### Notification Card Tests (`notification_card_test.dart`)
+- ✅ Notification display and formatting
+- ✅ Interactive actions (mark as read, dismiss, delete)
+- ✅ Swipe gesture functionality  
+- ✅ Expand/collapse behavior for long messages
+- ✅ Priority and type indicators
+- ✅ Compact mode functionality
+- ✅ Timestamp formatting
+- ✅ Metadata display
+
+#### Timetable Integration Tests (`timetable_integration_test.dart`)
+- ✅ Timetable page navigation and interaction
+- ✅ Calendar view switching (month/week/agenda)
+- ✅ Event filtering and search functionality
+- ✅ Countdown timer accuracy and display
+- ✅ Event details modal presentation
+- ✅ Pull-to-refresh functionality
+- ✅ Empty state handling
+- ✅ Date selection and navigation
+
+#### Existing Test Coverage
+- ✅ Authentication flow tests
+- ✅ Voting system tests  
+- ✅ Admin dashboard tests
+- ✅ Core service tests
 
 ### Code Coverage
 ```bash
+# Generate coverage report
 flutter test --coverage
 genhtml coverage/lcov.info -o coverage/html
+
+# View coverage report
+open coverage/html/index.html
+```
+
+### Running Specific Test Suites
+```bash
+# Notification tests only
+flutter test test/unit/features/notifications/ test/widget/features/notifications/
+
+# Timetable tests only  
+flutter test test/integration/timetable_integration_test.dart
+
+# All notification & timetable tests
+flutter test test/unit/features/notifications/ test/widget/features/notifications/ test/integration/timetable_integration_test.dart
 ```
 
 ## 📦 Build & Deployment
@@ -326,6 +576,162 @@ The app integrates with the Django Electra backend API:
 - Add comments for complex logic
 - Write tests for new features
 - Update documentation as needed
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Notifications Not Appearing
+1. **Check notification permissions:**
+   ```dart
+   // Verify permissions are granted
+   final notificationSettings = await FirebaseMessaging.instance.requestPermission();
+   print('Permission granted: ${notificationSettings.authorizationStatus}');
+   ```
+
+2. **Verify FCM token registration:**
+   ```dart
+   final token = await FirebaseMessaging.instance.getToken();
+   print('FCM Token: $token');
+   ```
+
+3. **Check notification channel setup (Android):**
+   ```bash
+   # Verify channels are created in Android settings
+   # Settings > Apps > Electra > Notifications
+   ```
+
+#### Offline Sync Issues
+1. **Check network connectivity:**
+   ```dart
+   final connectivity = ref.watch(networkStatusProvider);
+   print('Network status: $connectivity');
+   ```
+
+2. **Verify sync queue status:**
+   ```dart
+   final syncState = ref.watch(syncProvider);
+   print('Queued notifications: ${syncState.queuedNotifications}');
+   print('Last sync: ${syncState.lastSyncTime}');
+   ```
+
+3. **Review error logs:**
+   ```dart
+   // Enable debug logging
+   AppLogger.setLevel(LogLevel.debug);
+   ```
+
+#### Calendar Not Loading
+1. **Check date range parameters:**
+   ```dart
+   // Ensure valid date ranges
+   final startDate = DateTime.now().subtract(Duration(days: 30));
+   final endDate = DateTime.now().add(Duration(days: 90));
+   ```
+
+2. **Verify API connectivity:**
+   ```bash
+   # Test timetable endpoint
+   curl -H "Authorization: Bearer your_token" \
+        "https://your-api.com/api/timetable/events"
+   ```
+
+3. **Review cached data validity:**
+   ```dart
+   // Clear cache if needed
+   await ref.read(timetableProvider.notifier).clearCache();
+   ```
+
+#### Countdown Timers Not Updating
+1. **Check system time accuracy:**
+   ```dart
+   print('System time: ${DateTime.now()}');
+   print('Event time: ${event.startDateTime}');
+   ```
+
+2. **Verify timer lifecycle:**
+   ```dart
+   // Ensure timer is properly started
+   ref.read(countdownProvider.notifier).startCountdowns();
+   ```
+
+#### Performance Issues
+1. **Monitor memory usage:**
+   ```dart
+   // Check for memory leaks in animations
+   @override
+   void dispose() {
+     _animationController.dispose();
+     super.dispose();
+   }
+   ```
+
+2. **Optimize image loading:**
+   ```dart
+   // Use cached network images
+   CachedNetworkImage(imageUrl: notification.imageUrl)
+   ```
+
+### Debug Tools
+```dart
+// Enable debug logging for notifications
+AppLogger.setLevel(LogLevel.debug);
+
+// Check sync status
+final syncState = ref.watch(syncProvider);
+print('Queued notifications: ${syncState.queuedNotifications}');
+print('Last sync: ${syncState.lastSyncTime}');
+
+// Inspect notification state
+final notifications = ref.watch(notificationProvider);
+print('Total notifications: ${notifications.notifications.length}');
+print('Unread count: ${notifications.summary?.unreadCount}');
+
+// Monitor timetable events
+final timetable = ref.watch(timetableProvider);
+print('Events loaded: ${timetable.events.length}');
+print('Active events: ${timetable.activeEvents.length}');
+```
+
+### Firebase Configuration Issues
+1. **Verify google-services.json/GoogleService-Info.plist:**
+   ```bash
+   # Android - check file exists
+   ls -la android/app/google-services.json
+   
+   # iOS - check file exists  
+   ls -la ios/Runner/GoogleService-Info.plist
+   ```
+
+2. **Check Firebase project settings:**
+   - Verify package name matches
+   - Ensure FCM is enabled
+   - Check API keys are valid
+
+3. **Test FCM directly:**
+   ```bash
+   # Send test notification via Firebase Console
+   # Project Settings > Cloud Messaging > Send test message
+   ```
+
+### Build Issues
+1. **Clean and rebuild:**
+   ```bash
+   flutter clean
+   flutter pub get
+   flutter packages pub run build_runner build --delete-conflicting-outputs
+   flutter run
+   ```
+
+2. **Check Flutter doctor:**
+   ```bash
+   flutter doctor -v
+   ```
+
+3. **Verify dependencies:**
+   ```bash
+   flutter pub deps
+   ```
 
 ## 📝 License
 
