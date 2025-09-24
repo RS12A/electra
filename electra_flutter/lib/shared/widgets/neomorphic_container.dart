@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/theme/theme_config.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_controller.dart';
 
 /// A neomorphic container widget that provides modern, elevated design
 /// 
@@ -8,7 +13,9 @@ import 'package:flutter/material.dart';
 /// - Press state for interactive elements
 /// - Theme-aware color adaptation for light/dark modes
 /// - KWASU brand color integration
-class NeomorphicContainer extends StatefulWidget {
+/// 
+/// @deprecated Use NeomorphicCard from ui/components/neomorphic_card.dart instead
+class NeomorphicContainer extends ConsumerStatefulWidget {
   /// Creates a neomorphic container
   const NeomorphicContainer({
     super.key,
@@ -67,10 +74,10 @@ class NeomorphicContainer extends StatefulWidget {
   final double? height;
 
   @override
-  State<NeomorphicContainer> createState() => _NeomorphicContainerState();
+  ConsumerState<NeomorphicContainer> createState() => _NeomorphicContainerState();
 }
 
-class _NeomorphicContainerState extends State<NeomorphicContainer>
+class _NeomorphicContainerState extends ConsumerState<NeomorphicContainer>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _elevationAnimation;
@@ -88,7 +95,7 @@ class _NeomorphicContainerState extends State<NeomorphicContainer>
       end: widget.elevation * 0.3,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: AnimationConfig.easingCurve,
     ));
   }
 
@@ -128,17 +135,12 @@ class _NeomorphicContainerState extends State<NeomorphicContainer>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final themeController = ref.watch(themeControllerProvider);
+    final currentTheme = themeController.currentTheme;
     
-    // Color calculations for neomorphic effect
-    final baseColor = widget.color ?? theme.scaffoldBackgroundColor;
-    final lightShadowColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.white.withOpacity(0.8);
-    final darkShadowColor = isDark
-        ? Colors.black.withOpacity(0.8)
-        : Colors.grey.shade400.withOpacity(0.6);
+    final baseColor = widget.color ?? AppColors.getSurfaceColor(currentTheme);
+    final lightShadowColor = AppColors.getLightShadowColor(currentTheme);
+    final darkShadowColor = AppColors.getDarkShadowColor(currentTheme);
 
     return AnimatedBuilder(
       animation: _elevationAnimation,
@@ -165,14 +167,14 @@ class _NeomorphicContainerState extends State<NeomorphicContainer>
                     ? [
                         // Inset shadow effect for pressed state
                         BoxShadow(
-                          color: darkShadowColor,
+                          color: darkShadowColor.withOpacity(0.4),
                           offset: Offset(currentElevation * 0.5, currentElevation * 0.5),
                           blurRadius: widget.shadowBlurRadius * 0.5,
                           spreadRadius: -widget.shadowSpreadRadius,
                           inset: true,
                         ),
                         BoxShadow(
-                          color: lightShadowColor,
+                          color: lightShadowColor.withOpacity(0.2),
                           offset: Offset(-currentElevation * 0.3, -currentElevation * 0.3),
                           blurRadius: widget.shadowBlurRadius * 0.3,
                           spreadRadius: -widget.shadowSpreadRadius * 0.5,

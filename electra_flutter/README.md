@@ -122,6 +122,36 @@ Each feature module follows Clean Architecture layers:
 - **Performance**: Efficient batch processing with concurrent operation limits
 - **Testing**: Comprehensive unit, integration, and widget tests for reliability
 
+#### **Theme Architecture**
+```
+Theme System Architecture:
+┌─────────────────────────────────────────────────────────────┐
+│                    Theme Controller                         │
+│  ┌─────────────────┐  ┌──────────────────────────────────┐  │
+│  │ Theme State     │  │     Accessibility Settings      │  │
+│  │ Management      │  │   (Motion, Contrast, Scale)     │  │
+│  └─────────────────┘  └──────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     Theme Variants                         │
+│  ┌─────────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ KWASU Theme     │  │ Light Theme  │  │ Dark Theme    │  │
+│  │ (Primary)       │  │              │  │               │  │
+│  └─────────────────┘  └──────────────┘  └───────────────┘  │
+│  ┌─────────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ High Contrast   │  │ Color System │  │ Typography    │  │
+│  │ (Accessibility) │  │ & Palettes   │  │ & Spacing     │  │
+│  └─────────────────┘  └──────────────┘  └───────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                  Component Library                          │
+│  ┌─────────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ Neomorphic      │  │ Animated     │  │ Page Route    │  │
+│  │ Components      │  │ Interactions │  │ Transitions   │  │
+│  └─────────────────┘  └──────────────┘  └───────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
 #### **Offline Architecture**
 ```
 Offline Module Architecture:
@@ -161,6 +191,15 @@ Offline Module Architecture:
 - **Auth Tokens**: Local wins (newest token) for security freshness  
 - **Notifications**: Merge/allow duplicates for comprehensive delivery
 - **Timetable Events**: Latest wins with intelligent conflict detection
+
+### 🎨 **Production-Grade Theming & Animation System**
+- **Multi-Theme Support**: KWASU-first (primary), Light, Dark, and High-Contrast accessibility themes
+- **Runtime Theme Switching**: Persistent theme preferences with encrypted local storage
+- **Neomorphic Design**: Modern elevated UI components with soft shadows and depth variations
+- **Accessibility Integration**: Automatic high-contrast mode, system font scaling, reduce motion support
+- **Animation System**: Smooth screen transitions, micro-interactions, and Lottie animation support
+- **Component Library**: Reusable neomorphic buttons, cards, inputs, switches under `/lib/ui/components/`
+- **Developer Tools**: Theme showcase page for development and testing
 
 ### 🔔 **Legacy Notifications**
 - **Real-time Alerts**: Election updates and system notifications
@@ -1044,6 +1083,188 @@ print('Active events: ${timetable.activeEvents.length}');
    ```bash
    flutter pub deps
    ```
+
+## 🎨 Theme & Animation Development Guide
+
+### Quick Start with Theming
+
+```dart
+// Import the component library
+import 'package:electra_flutter/ui/components/index.dart';
+
+// Use neomorphic components
+NeomorphicButtons.primary(
+  onPressed: () => print('Hello KWASU!'),
+  child: Text('Vote Now'),
+)
+
+// Access theme controller
+final themeController = ref.watch(themeControllerProvider);
+await themeController.changeTheme(AppThemeMode.dark);
+```
+
+### Theme Customization
+
+#### 1. Adding New Themes
+```dart
+// Add to AppThemeMode enum in theme_config.dart
+enum AppThemeMode {
+  kwasu,
+  light, 
+  dark,
+  highContrast,
+  yourCustomTheme, // Add here
+}
+
+// Add color scheme in app_colors.dart
+static ColorScheme _getYourCustomTheme() {
+  return const ColorScheme.light(
+    // Define your colors
+  );
+}
+```
+
+#### 2. Creating Custom Neomorphic Components
+```dart
+class CustomNeomorphicWidget extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentTheme = ref.watch(currentThemeProvider);
+    
+    return NeomorphicCard(
+      style: NeomorphicCardStyle.elevated,
+      child: YourContent(),
+    );
+  }
+}
+```
+
+#### 3. Adding Page Transitions
+```dart
+// Use built-in transitions
+AppPageRoutes.slideTransition<void>(
+  child: YourPage(),
+  direction: SlideDirection.right,
+)
+
+// Or create custom transitions
+PageRouteBuilder(
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    return YourCustomTransition(child: child);
+  },
+)
+```
+
+### Animation System
+
+#### 1. Respecting Accessibility Settings
+```dart
+// Always use the theme controller for duration
+final duration = ref.watch(animationDurationProvider(
+  AnimationConfig.microDuration
+));
+
+AnimatedContainer(
+  duration: duration, // Automatically reduced if reduce motion is enabled
+  child: child,
+)
+```
+
+#### 2. Using Built-in Animations
+```dart
+// Press animation for buttons
+AnimatedPressButton(
+  onPressed: () {},
+  child: YourWidget(),
+)
+
+// Shimmer loading
+AnimatedShimmer(
+  enabled: isLoading,
+  child: YourContent(),
+)
+
+// Lottie animations
+AppLottieAnimation(
+  asset: 'assets/animations/voting_success.json',
+  width: 200,
+  height: 200,
+)
+```
+
+### Testing Themes
+
+#### 1. Theme Showcase
+Run the theme showcase for development:
+```dart
+// Add to your development routes
+Navigator.push(context, MaterialPageRoute(
+  builder: (context) => ThemeShowcase(),
+));
+```
+
+#### 2. Golden Tests
+```dart
+testWidgets('golden test - KWASU theme', (tester) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeController._buildThemeData(AppThemeMode.kwasu),
+      home: YourWidget(),
+    ),
+  );
+  
+  await expectLater(
+    find.byType(YourWidget),
+    matchesGoldenFile('golden/kwasu_theme.png'),
+  );
+});
+```
+
+#### 3. Accessibility Testing
+```dart
+testWidgets('respects reduce motion setting', (tester) async {
+  // Test with reduce motion enabled
+  final controller = ThemeController(mockStorage);
+  await controller.setAccessibilitySettings(reduceMotion: true);
+  
+  final duration = controller.getAnimationDuration(Duration(milliseconds: 300));
+  expect(duration, AnimationConfig.reducedMotionDuration);
+});
+```
+
+### Best Practices
+
+1. **Always use theme-aware colors**:
+   ```dart
+   // Good
+   color: AppColors.getSurfaceColor(currentTheme)
+   
+   // Bad
+   color: Colors.white
+   ```
+
+2. **Respect accessibility settings**:
+   ```dart
+   // Good
+   duration: ref.watch(animationDurationProvider(defaultDuration))
+   
+   // Bad  
+   duration: Duration(milliseconds: 300)
+   ```
+
+3. **Use semantic naming**:
+   ```dart
+   // Good  
+   NeomorphicButtons.primary(onPressed: vote, child: Text('Cast Vote'))
+   
+   // Bad
+   NeomorphicButton(style: NeomorphicButtonStyle.elevated, ...)
+   ```
+
+4. **Test all themes**:
+   - Include golden tests for each theme variant
+   - Test accessibility settings combinations
+   - Verify animations work on low-end devices
 
 ## 📝 License
 
