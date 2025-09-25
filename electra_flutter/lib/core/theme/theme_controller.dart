@@ -414,8 +414,33 @@ class ThemeController extends ChangeNotifier {
 
 /// Provider for theme controller
 final themeControllerProvider = ChangeNotifierProvider<ThemeController>((ref) {
-  throw UnimplementedError('ThemeController must be provided via dependency injection');
+  // Create a mock storage service for now
+  // In production, this should be injected via proper DI
+  final mockStorage = _MockStorageService();
+  return ThemeController(mockStorage);
 });
+
+/// Mock storage service that implements the interface needed by ThemeController
+class _MockStorageService implements StorageService {
+  final Map<String, String> _storage = {};
+  
+  @override
+  Future<String?> readSecure(String key) async {
+    return _storage[key];
+  }
+  
+  @override
+  Future<void> storeSecure(String key, String value) async {
+    _storage[key] = value;
+  }
+  
+  // Required by StorageService interface but not used by ThemeController
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    // Return default values for unimplemented methods
+    return super.noSuchMethod(invocation);
+  }
+}
 
 /// Provider for current theme mode
 final currentThemeProvider = Provider<AppThemeMode>((ref) {

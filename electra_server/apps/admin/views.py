@@ -675,26 +675,56 @@ class AdminCandidateListView(generics.ListAPIView):
     """
     View for listing candidates in admin APIs.
     
-    Note: This is a placeholder implementation as candidate models
-    were not found in the provided codebase. This would need to be
-    updated once the candidate model is implemented.
+    Lists users with candidate role, providing admin capabilities
+    to manage candidate information and election participation.
     """
     
     permission_classes = [AdminPermission]
     throttle_classes = [AdminRateThrottle]
+    serializer_class = AdminUserListSerializer
+    
+    def get_queryset(self) -> QuerySet[User]:
+        """Get queryset of users with candidate role."""
+        return User.objects.filter(role=UserRole.CANDIDATE).select_related()
     
     def list(self, request: Request, *args, **kwargs) -> Response:
         """
         List candidates for elections.
         
-        This is a placeholder implementation that would need to be
-        updated once the candidate model is available.
+        Returns paginated list of users with candidate role.
         """
-        # TODO: Implement once candidate model is available
-        return Response({
-            'detail': 'Candidate management API not yet implemented. Candidate model not found in codebase.',
-            'note': 'This endpoint will be fully implemented once the candidate model is available.'
-        })
+        queryset = self.get_queryset()
+        
+        # Apply search filter if provided
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(full_name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(matric_number__icontains=search)
+            )
+        
+        # Apply pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            result = self.get_paginated_response(serializer.data)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            result = Response(serializer.data)
+        
+        # Log the action
+        log_admin_action(
+            user=request.user,
+            action=AuditActionType.LIST_CANDIDATES,
+            target_model='User',
+            details={
+                'candidate_count': queryset.count(),
+                'search_query': search,
+            }
+        )
+        
+        return result
 
 
 class AdminDashboardView(generics.GenericAPIView):
