@@ -59,7 +59,7 @@ class Command(BaseCommand):
                     force=options['force']
                 )
                 
-                # Create sample election (placeholder for future implementation)
+                # Create sample election for development
                 self._create_sample_election()
                 
                 if admin_created:
