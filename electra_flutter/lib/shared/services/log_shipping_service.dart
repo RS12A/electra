@@ -209,7 +209,7 @@ class LogShippingService {
       debugPrint('Failed to flush logs: $e');
       // Re-add logs to buffer for retry (up to a limit)
       if (_logBuffer.length < _maxBufferSize * 2) {
-        _logBuffer.addAll(_logBuffer);
+        _logBuffer.addAll(logsToSend);
       }
     }
   }
