@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/constants/app_constants.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/notifications/presentation/providers/notification_providers.dart';
 
 /// Main layout wrapper for authenticated app screens
 ///
@@ -57,9 +59,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         // Notifications
         Consumer(
           builder: (context, ref, child) {
-            // TODO: Watch notification count provider
-            final notificationCount =
-                0; // ref.watch(notificationCountProvider);
+            // Watch notification state to get unread count
+            final notificationState = ref.watch(notificationStateProvider);
+            final notificationCount = notificationState.summary?.unreadCount ?? 0;
 
             return Stack(
               children: [
@@ -331,10 +333,12 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   void _handleProfileMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'profile':
-        // TODO: Navigate to profile page
+        // Navigate to profile page
+        context.go(AppRoutes.profile);
         break;
       case 'settings':
-        // TODO: Navigate to settings page
+        // Navigate to settings page
+        context.go(AppRoutes.settings);
         break;
       case 'logout':
         _handleLogout(context);
@@ -355,10 +359,28 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              // TODO: Implement logout logic
-              context.go(AppRoutes.login);
+              
+              // Perform logout through auth provider
+              try {
+                await ref.read(authStateProvider.notifier).logout();
+                
+                // Navigate to login page and clear navigation stack
+                if (context.mounted) {
+                  context.go(AppRoutes.login);
+                }
+              } catch (e) {
+                // Show error if logout fails
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Logout failed: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Logout'),

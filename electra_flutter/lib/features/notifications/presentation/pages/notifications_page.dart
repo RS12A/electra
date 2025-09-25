@@ -453,15 +453,27 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   }
 
   /// Handle notification tap
-  void _handleNotificationTap(Map<String, dynamic> notification) {
+  void _handleNotificationTap(Map<String, dynamic> notification) async {
     if (!notification['isRead']) {
-      // Mark as read
-      // TODO: Update notification status in API
-      // ref.read(notificationServiceProvider).markAsRead(notification['id']);
-
-      setState(() {
-        notification['isRead'] = true;
-      });
+      // Mark as read using the notification provider
+      final notificationProvider = ref.read(notificationStateProvider.notifier);
+      final success = await notificationProvider.markNotificationAsRead(notification['id']);
+      
+      if (success) {
+        setState(() {
+          notification['isRead'] = true;
+        });
+      } else {
+        // Show error if marking as read failed
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to mark notification as read'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
 
     // Handle specific notification actions based on type
@@ -501,20 +513,29 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   }
 
   /// Mark all notifications as read
-  void _markAllAsRead() {
-    // TODO: API call to mark all as read
-    // ref.read(notificationServiceProvider).markAllAsRead();
+  void _markAllAsRead() async {
+    // API call to mark all as read using the notification provider
+    final notificationProvider = ref.read(notificationStateProvider.notifier);
+    final success = await notificationProvider.markAllNotificationsAsRead();
+    
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All notifications marked as read'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to mark all notifications as read'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('All notifications marked as read'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    setState(() {
-      // Update local state
-    });
+    // Refresh the notifications list
+    _loadNotifications();
   }
 
   /// Clear all notifications
@@ -532,22 +553,32 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
 
-              // TODO: API call to clear all notifications
-              // ref.read(notificationServiceProvider).clearAll();
+              // API call to clear all notifications using the notification provider
+              final notificationProvider = ref.read(notificationStateProvider.notifier);
+              final success = await notificationProvider.clearAllNotifications();
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All notifications cleared'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-
-              setState(() {
-                // Update local state
-              });
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All notifications cleared'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                
+                // Refresh the notifications list
+                _loadNotifications();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to clear notifications'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Clear All'),
@@ -563,11 +594,24 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       _isLoading = true;
     });
 
-    // TODO: Load notifications from API
-    // final notifications = await ref.read(notificationServiceProvider).getNotifications(_selectedFilter);
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Load notifications from API using the notification provider
+      final notificationProvider = ref.read(notificationStateProvider.notifier);
+      await notificationProvider.loadNotifications(
+        isRefresh: true,
+        limit: 50, // Load up to 50 notifications
+      );
+    } catch (e) {
+      // Handle error if needed
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load notifications: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
 
     if (mounted) {
       setState(() {
