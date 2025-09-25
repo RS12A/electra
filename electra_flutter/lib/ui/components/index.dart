@@ -7,6 +7,7 @@ export 'neomorphic_button.dart';
 export 'neomorphic_card.dart';
 export 'neomorphic_input.dart';
 export 'neomorphic_switch.dart';
+export 'responsive_layout.dart';
 
 // Re-export theme system for convenience
 export '../../core/theme/theme_config.dart';
