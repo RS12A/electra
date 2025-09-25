@@ -218,7 +218,10 @@ class BallotToken(models.Model):
             'user_id': str(self.user.id),
             'election_id': str(self.election.id),
             'issued_at': self.issued_at.isoformat() if self.issued_at else timezone.now().isoformat(),
-            'expires_at': self.expires_at.isoformat() if self.expires_at else '',
+            'expires_at': (
+                self.expires_at.isoformat() if self.expires_at
+                else min(timezone.now() + timedelta(hours=24), self.election.end_time).isoformat()
+            ),
         }
     
     def create_signature(self) -> str:
