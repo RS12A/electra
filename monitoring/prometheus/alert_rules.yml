@@ -32,14 +32,15 @@ groups:
 
       # Database latency alerts
       - alert: DatabaseHighLatency
-        expr: django_db_execute_time > 0.5
+        expr: |
+          histogram_quantile(0.95, rate(django_db_execute_seconds_bucket[5m])) > 0.5
         for: 1m
         labels:
           severity: warning
           category: performance
         annotations:
-          summary: "Database latency is high (>500ms)"
-          description: "Database query latency is {{ $value }}s"
+          summary: "Database latency is high (95th percentile >500ms)"
+          description: "95th percentile database query latency is {{ $value }}s"
           runbook_url: "https://github.com/RS12A/electra/blob/main/runbooks/incident_response.md#database-issues"
 
       # API response time alerts
