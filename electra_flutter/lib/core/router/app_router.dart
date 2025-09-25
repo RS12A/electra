@@ -252,6 +252,58 @@ class AppNavigation {
   }
 }
 
+/// User role enumeration
+enum UserRole {
+  student,
+  staff,
+  admin,
+  electoralCommittee
+}
+
+/// User model for authentication state
+class User {
+  final String id;
+  final String email;
+  final String fullName;
+  final UserRole role;
+  final String? matricNumber;
+  final String? staffId;
+
+  const User({
+    required this.id,
+    required this.email,
+    required this.fullName,
+    required this.role,
+    this.matricNumber,
+    this.staffId,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      email: json['email'],
+      fullName: json['full_name'],
+      role: UserRole.values.firstWhere(
+        (e) => e.toString().split('.').last == json['role'],
+        orElse: () => UserRole.student,
+      ),
+      matricNumber: json['matric_number'],
+      staffId: json['staff_id'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'full_name': fullName,
+      'role': role.toString().split('.').last,
+      'matric_number': matricNumber,
+      'staff_id': staffId,
+    };
+  }
+}
+
 /// Dummy auth state provider (will be replaced with actual implementation)
 final authStateProvider = StateProvider<AuthState>(
   (ref) => const AuthState(),
