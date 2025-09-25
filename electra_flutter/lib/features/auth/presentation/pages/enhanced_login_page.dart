@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/router/app_router.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/layout/auth_layout.dart';
+import '../../../../core/router/app_router.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../ui/components/index.dart';
 import '../widgets/auth_widgets.dart';
 import '../providers/auth_provider.dart';
 import '../../domain/entities/auth_entities.dart';
@@ -12,12 +12,13 @@ import '../../domain/entities/auth_entities.dart';
 /// Enhanced login page with production-grade authentication
 ///
 /// Features:
-/// - Neomorphic design with smooth animations
+/// - Enhanced neomorphic design with smooth GPU-optimized animations
 /// - Support for email, matriculation number, or staff ID login
 /// - Biometric authentication support
 /// - Offline login capabilities
 /// - Comprehensive validation and error handling
-/// - Accessibility support
+/// - Full accessibility support with screen reader compatibility
+/// - Responsive design for mobile, tablet, and desktop
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -35,19 +36,463 @@ class _LoginPageState extends ConsumerState<LoginPage>
   bool _rememberMe = false;
   String? _successMessage;
 
+  late List<AnimationController> _staggeredControllers;
   late AnimationController _fadeAnimationController;
-  late AnimationController _slideAnimationController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    
-    // Setup animations
+    _setupAnimations();
+    _startAnimations();
+  }
+
+  void _setupAnimations() {
     _fadeAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: AnimationConfig.slowDuration,
       vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeAnimationController,
+      curve: AnimationConfig.smoothCurve,
+    ));
+
+    // Create staggered animations for form elements
+    _staggeredControllers = StaggeredAnimationController.createStaggeredControllers(
+      vsync: this,
+      itemCount: 6, // Header, inputs, button, biometric, links, footer
+      duration: AnimationConfig.screenTransitionDuration,
+    );
+  }
+
+  void _startAnimations() {
+    _fadeAnimationController.forward();
+    
+    // Start staggered animation with delay
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) {
+        StaggeredAnimationController.startStaggeredAnimation(
+          controllers: _staggeredControllers,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _identifierController.dispose();
+    _passwordController.dispose();
+    _fadeAnimationController.dispose();
+    StaggeredAnimationController.disposeControllers(_staggeredControllers);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final authState = ref.watch(authStateProvider);
+
+    return Scaffold(
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ResponsiveContainer(
+          maxWidth: 480,
+          child: ResponsivePadding(
+            mobile: const EdgeInsets.all(SpacingConfig.lg),
+            tablet: const EdgeInsets.all(SpacingConfig.xl),
+            desktop: const EdgeInsets.all(SpacingConfig.xxl),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Welcome header
+                  _buildAnimatedItem(
+                    0,
+                    _buildWelcomeHeader(screenWidth),
+                  ),
+                  
+                  SizedBox(height: SpacingConfig.getResponsiveSpacing(screenWidth, SpacingConfig.xl)),
+                  
+                  // Login form card
+                  _buildAnimatedItem(
+                    1,
+                    _buildLoginFormCard(authState, screenWidth),
+                  ),
+                  
+                  SizedBox(height: SpacingConfig.getResponsiveSpacing(screenWidth, SpacingConfig.lg)),
+                  
+                  // Login button
+                  _buildAnimatedItem(
+                    2,
+                    _buildLoginButton(authState),
+                  ),
+                  
+                  // Biometric login (if available)
+                  if (authState.canUseBiometric) ...[
+                    SizedBox(height: SpacingConfig.getResponsiveSpacing(screenWidth, SpacingConfig.lg)),
+                    _buildAnimatedItem(
+                      3,
+                      _buildBiometricSection(authState),
+                    ),
+                  ],
+                  
+                  SizedBox(height: SpacingConfig.getResponsiveSpacing(screenWidth, SpacingConfig.lg)),
+                  
+                  // Navigation links
+                  _buildAnimatedItem(
+                    4,
+                    _buildNavigationLinks(screenWidth),
+                  ),
+                  
+                  SizedBox(height: SpacingConfig.getResponsiveSpacing(screenWidth, SpacingConfig.md)),
+                  
+                  // Footer
+                  _buildAnimatedItem(
+                    5,
+                    _buildFooter(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedItem(int index, Widget child) {
+    return AnimatedBuilder(
+      animation: _staggeredControllers[index],
+      builder: (context, _) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - _staggeredControllers[index].value)),
+          child: Opacity(
+            opacity: _staggeredControllers[index].value,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildWelcomeHeader(double screenWidth) {
+    return Column(
+      children: [
+        // Logo or app icon
+        Container(
+          width: ResponsiveConfig.isMobile(screenWidth) ? 80 : 100,
+          height: ResponsiveConfig.isMobile(screenWidth) ? 80 : 100,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.secondary,
+              ],
+            ),
+          ),
+          child: const Icon(
+            Icons.how_to_vote,
+            size: 40,
+            color: Colors.white,
+          ),
+        ),
+        
+        const SizedBox(height: SpacingConfig.lg),
+        
+        Text(
+          'Welcome to Electra',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        
+        const SizedBox(height: SpacingConfig.sm),
+        
+        Text(
+          'Secure Digital Voting System',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginFormCard(AuthState authState, double screenWidth) {
+    return NeomorphicCards.content(
+      padding: EdgeInsets.all(
+        ResponsiveConfig.isMobile(screenWidth) 
+            ? SpacingConfig.lg 
+            : SpacingConfig.xl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Identifier input
+          NeomorphicInputs.text(
+            controller: _identifierController,
+            labelText: 'Email, Matric No, or Staff ID',
+            hintText: 'Enter your login credential',
+            prefixIcon: const Icon(Icons.person_outline),
+            enabled: !authState.isLoading,
+          ),
+          
+          const SizedBox(height: SpacingConfig.lg),
+          
+          // Password input
+          NeomorphicInputs.password(
+            controller: _passwordController,
+            obscureText: !_isPasswordVisible,
+            enabled: !authState.isLoading,
+            onToggleVisibility: () {
+              setState(() {
+                _isPasswordVisible = !_isPasswordVisible;
+              });
+            },
+          ),
+          
+          const SizedBox(height: SpacingConfig.md),
+          
+          // Remember me toggle
+          NeomorphicSwitches.withLabel(
+            value: _rememberMe,
+            onChanged: authState.isLoading 
+                ? null 
+                : (value) => setState(() => _rememberMe = value),
+            label: 'Remember me',
+          ),
+          
+          // Error message
+          if (authState.error != null) ...[
+            const SizedBox(height: SpacingConfig.md),
+            AnimatedContainer(
+              duration: AnimationConfig.fastDuration,
+              padding: const EdgeInsets.all(SpacingConfig.md),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(NeomorphicConfig.smallBorderRadius),
+                border: Border.all(
+                  color: AppColors.error.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: AppColors.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: SpacingConfig.sm),
+                  Expanded(
+                    child: Text(
+                      authState.error!,
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          
+          // Success message
+          if (_successMessage != null) ...[
+            const SizedBox(height: SpacingConfig.md),
+            AnimatedContainer(
+              duration: AnimationConfig.fastDuration,
+              padding: const EdgeInsets.all(SpacingConfig.md),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(NeomorphicConfig.smallBorderRadius),
+                border: Border.all(
+                  color: AppColors.success.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: AppColors.success,
+                    size: 20,
+                  ),
+                  const SizedBox(width: SpacingConfig.sm),
+                  Expanded(
+                    child: Text(
+                      _successMessage!,
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(AuthState authState) {
+    return NeomorphicButtons.primary(
+      onPressed: authState.isLoading ? null : _handleLogin,
+      enabled: !authState.isLoading,
+      child: authState.isLoading
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : const Text(
+              'Login',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildBiometricSection(AuthState authState) {
+    return Column(
+      children: [
+        // Divider with "OR"
+        Row(
+          children: [
+            const Expanded(child: Divider()),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: SpacingConfig.md),
+              child: Text(
+                'OR',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Expanded(child: Divider()),
+          ],
+        ),
+        
+        const SizedBox(height: SpacingConfig.lg),
+        
+        // Biometric button
+        NeomorphicButtons.secondary(
+          onPressed: authState.isLoading ? null : _handleBiometricLogin,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.fingerprint,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: SpacingConfig.sm),
+              const Text('Use Biometric Login'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavigationLinks(double screenWidth) {
+    return ResponsiveWrap(
+      spacing: ResponsiveConfig.isMobile(screenWidth) 
+          ? SpacingConfig.sm 
+          : SpacingConfig.lg,
+      alignment: WrapAlignment.center,
+      children: [
+        TextButton(
+          onPressed: () => context.push('/forgot-password'),
+          child: const Text('Forgot Password?'),
+        ),
+        TextButton(
+          onPressed: () => context.push('/register'),
+          child: const Text('Create Account'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFooter() {
+    return Text(
+      'Powered by Electra © 2024\nKwara State University',
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      textAlign: TextAlign.center,
+    );
+  }
+
+  void _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final identifier = _identifierController.text.trim();
+    final password = _passwordController.text;
+
+    try {
+      await ref.read(authStateProvider.notifier).login(
+        identifier: identifier,
+        password: password,
+        rememberMe: _rememberMe,
+      );
+      
+      setState(() {
+        _successMessage = 'Login successful! Redirecting...';
+      });
+      
+      // Navigate to dashboard after success
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          context.go('/dashboard');
+        }
+      });
+    } catch (e) {
+      // Error is handled by the provider
+    }
+  }
+
+  void _handleBiometricLogin() async {
+    try {
+      await ref.read(authStateProvider.notifier).loginWithBiometric();
+      
+      setState(() {
+        _successMessage = 'Biometric login successful! Redirecting...';
+      });
+      
+      // Navigate to dashboard after success
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          context.go('/dashboard');
+        }
+      });
+    } catch (e) {
+      // Error is handled by the provider
+    }
+  }
+}
     );
     
     _slideAnimationController = AnimationController(
