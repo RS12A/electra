@@ -337,7 +337,7 @@ class _AnimatedShimmerState extends State<AnimatedShimmer>
   }
 }
 
-/// Staggered animation controller for lists
+/// Staggered animation controller for lists with performance optimizations
 class StaggeredAnimationController {
   static List<AnimationController> createStaggeredControllers({
     required TickerProvider vsync,
@@ -347,7 +347,7 @@ class StaggeredAnimationController {
   }) {
     final controllers = <AnimationController>[];
     final animDuration = duration ?? AnimationConfig.screenTransitionDuration;
-    final delay = staggerDelay ?? const Duration(milliseconds: 100);
+    final delay = staggerDelay ?? AnimationConfig.staggerDuration;
 
     for (int i = 0; i < itemCount; i++) {
       final controller = AnimationController(
@@ -360,16 +360,18 @@ class StaggeredAnimationController {
     return controllers;
   }
 
-  static void startStaggeredAnimation({
+  static Future<void> startStaggeredAnimation({
     required List<AnimationController> controllers,
     Duration? staggerDelay,
-  }) {
-    final delay = staggerDelay ?? const Duration(milliseconds: 100);
+    bool reverse = false,
+  }) async {
+    final delay = staggerDelay ?? AnimationConfig.staggerDuration;
+    final controllerList = reverse ? controllers.reversed.toList() : controllers;
 
-    for (int i = 0; i < controllers.length; i++) {
+    for (int i = 0; i < controllerList.length; i++) {
       Future.delayed(delay * i, () {
-        if (!controllers[i].isDisposed) {
-          controllers[i].forward();
+        if (!controllerList[i].isDisposed) {
+          controllerList[i].forward();
         }
       });
     }
@@ -377,7 +379,9 @@ class StaggeredAnimationController {
 
   static void disposeControllers(List<AnimationController> controllers) {
     for (final controller in controllers) {
-      controller.dispose();
+      if (!controller.isDisposed) {
+        controller.dispose();
+      }
     }
   }
 }
@@ -446,6 +450,12 @@ class BouncyFAB extends StatefulWidget {
     this.foregroundColor,
     this.heroTag,
     this.tooltip,
+    this.elevation = 6.0,
+    this.focusElevation = 8.0,
+    this.hoverElevation = 8.0,
+    this.highlightElevation = 12.0,
+    this.disabledElevation = 0.0,
+    this.mini = false,
   });
 
   final VoidCallback? onPressed;
@@ -454,6 +464,12 @@ class BouncyFAB extends StatefulWidget {
   final Color? foregroundColor;
   final Object? heroTag;
   final String? tooltip;
+  final double elevation;
+  final double focusElevation;
+  final double hoverElevation;
+  final double highlightElevation;
+  final double disabledElevation;
+  final bool mini;
 
   @override
   State<BouncyFAB> createState() => _BouncyFABState();
@@ -463,17 +479,27 @@ class _BouncyFABState extends State<BouncyFAB>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _rotationAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: AnimationConfig.microDuration,
+      duration: AnimationConfig.fastDuration,
       vsync: this,
     );
+    
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.9,
+      end: 0.85,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: AnimationConfig.springCurve,
+    ));
+
+    _rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.05,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: AnimationConfig.bounceCurve,
@@ -495,21 +521,210 @@ class _BouncyFABState extends State<BouncyFAB>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: FloatingActionButton(
-            onPressed: _handlePress,
-            backgroundColor: widget.backgroundColor,
-            foregroundColor: widget.foregroundColor,
-            heroTag: widget.heroTag,
-            tooltip: widget.tooltip,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Transform.rotate(
+              angle: _rotationAnimation.value,
+              child: FloatingActionButton(
+                onPressed: _handlePress,
+                backgroundColor: widget.backgroundColor,
+                foregroundColor: widget.foregroundColor,
+                heroTag: widget.heroTag,
+                tooltip: widget.tooltip,
+                elevation: widget.elevation,
+                focusElevation: widget.focusElevation,
+                hoverElevation: widget.hoverElevation,
+                highlightElevation: widget.highlightElevation,
+                disabledElevation: widget.disabledElevation,
+                mini: widget.mini,
+                child: widget.child,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Performance-optimized slide transition for lists
+class OptimizedSlideTransition extends StatelessWidget {
+  const OptimizedSlideTransition({
+    super.key,
+    required this.position,
+    required this.child,
+    this.transformHitTests = true,
+    this.textDirection,
+  });
+
+  final Animation<Offset> position;
+  final bool transformHitTests;
+  final TextDirection? textDirection;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: SlideTransition(
+        position: position,
+        transformHitTests: transformHitTests,
+        textDirection: textDirection,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// GPU-accelerated parallax scroll effect
+class ParallaxScrollEffect extends StatefulWidget {
+  const ParallaxScrollEffect({
+    super.key,
+    required this.child,
+    required this.scrollController,
+    this.speed = 0.5,
+    this.offset = 0.0,
+  });
+
+  final Widget child;
+  final ScrollController scrollController;
+  final double speed;
+  final double offset;
+
+  @override
+  State<ParallaxScrollEffect> createState() => _ParallaxScrollEffectState();
+}
+
+class _ParallaxScrollEffectState extends State<ParallaxScrollEffect> {
+  double _scrollPosition = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() {
+    setState(() {
+      _scrollPosition = widget.scrollController.position.pixels;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parallaxOffset = (_scrollPosition * widget.speed) + widget.offset;
+    
+    return Transform.translate(
+      offset: Offset(0, parallaxOffset),
+      child: widget.child,
+    );
+  }
+}
+
+/// Morphing container with smooth transitions
+class MorphingContainer extends StatefulWidget {
+  const MorphingContainer({
+    super.key,
+    required this.duration,
+    this.curve = Curves.linear,
+    this.alignment,
+    this.padding,
+    this.color,
+    this.decoration,
+    this.foregroundDecoration,
+    this.width,
+    this.height,
+    this.constraints,
+    this.margin,
+    this.transform,
+    this.transformAlignment,
+    this.child,
+    this.clipBehavior = Clip.none,
+  });
+
+  final Duration duration;
+  final Curve curve;
+  final AlignmentGeometry? alignment;
+  final EdgeInsetsGeometry? padding;
+  final Color? color;
+  final Decoration? decoration;
+  final Decoration? foregroundDecoration;
+  final double? width;
+  final double? height;
+  final BoxConstraints? constraints;
+  final EdgeInsetsGeometry? margin;
+  final Matrix4? transform;
+  final AlignmentGeometry? transformAlignment;
+  final Widget? child;
+  final Clip clipBehavior;
+
+  @override
+  State<MorphingContainer> createState() => _MorphingContainerState();
+}
+
+class _MorphingContainerState extends State<MorphingContainer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: widget.duration,
+      vsync: this,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(MorphingContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.duration != widget.duration) {
+      _controller.duration = widget.duration;
+    }
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return AnimatedContainer(
+            duration: widget.duration,
+            curve: widget.curve,
+            alignment: widget.alignment,
+            padding: widget.padding,
+            color: widget.color,
+            decoration: widget.decoration,
+            foregroundDecoration: widget.foregroundDecoration,
+            width: widget.width,
+            height: widget.height,
+            constraints: widget.constraints,
+            margin: widget.margin,
+            transform: widget.transform,
+            transformAlignment: widget.transformAlignment,
+            clipBehavior: widget.clipBehavior,
             child: widget.child,
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

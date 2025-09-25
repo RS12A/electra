@@ -64,17 +64,20 @@ class _NeomorphicButtonState extends ConsumerState<NeomorphicButton>
   }
 
   void _setupAnimations() {
+    final themeController = ref.read(themeControllerProvider);
+    final animationDuration = themeController.getAnimationDuration(AnimationConfig.microDuration);
+    
     _animationController = AnimationController(
-      duration: AnimationConfig.microDuration,
+      duration: animationDuration,
       vsync: this,
     );
 
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.98,
+      end: NeomorphicConfig.pressScaleFactor,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: AnimationConfig.easingCurve,
+      curve: AnimationConfig.sharpCurve,
     ));
 
     _elevationAnimation = Tween<double>(
@@ -151,6 +154,7 @@ class _NeomorphicButtonState extends ConsumerState<NeomorphicButton>
   Widget build(BuildContext context) {
     final themeController = ref.watch(themeControllerProvider);
     final currentTheme = themeController.currentTheme;
+    final screenWidth = MediaQuery.of(context).size.width;
     
     final baseColor = widget.color ?? 
         AppColors.getSurfaceColor(currentTheme);
@@ -166,39 +170,43 @@ class _NeomorphicButtonState extends ConsumerState<NeomorphicButton>
         onTapCancel: _handleTapCancel,
         child: Tooltip(
           message: widget.tooltip ?? '',
-          child: AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              final currentElevation = widget.animationType == NeomorphicAnimationType.press
-                  ? _elevationAnimation.value
-                  : (_isHovered ? widget.elevation * 1.2 : widget.elevation);
-              
-              final scale = widget.animationType == NeomorphicAnimationType.press
-                  ? _scaleAnimation.value
-                  : 1.0;
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                final currentElevation = widget.animationType == NeomorphicAnimationType.press
+                    ? _elevationAnimation.value
+                    : (_isHovered ? widget.elevation * NeomorphicConfig.hoverElevationMultiplier : widget.elevation);
+                
+                final scale = widget.animationType == NeomorphicAnimationType.press
+                    ? _scaleAnimation.value
+                    : (_isHovered ? NeomorphicConfig.hoverScaleFactor : 1.0);
 
-              return Transform.scale(
-                scale: scale,
-                child: Container(
-                  width: widget.width,
-                  height: widget.height,
-                  padding: widget.padding,
-                  decoration: _buildDecoration(
-                    baseColor,
-                    lightShadowColor,
-                    darkShadowColor,
-                    currentElevation,
-                  ),
-                  child: Center(
-                    child: AnimatedOpacity(
-                      opacity: widget.enabled ? 1.0 : 0.6,
-                      duration: AnimationConfig.microDuration,
-                      child: widget.child,
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    width: widget.width,
+                    height: widget.height,
+                    padding: ResponsiveConfig.isMobile(screenWidth) 
+                        ? widget.padding * 0.8
+                        : widget.padding,
+                    decoration: _buildDecoration(
+                      baseColor,
+                      lightShadowColor,
+                      darkShadowColor,
+                      currentElevation,
+                    ),
+                    child: Center(
+                      child: AnimatedOpacity(
+                        opacity: widget.enabled ? 1.0 : 0.6,
+                        duration: AnimationConfig.fastDuration,
+                        child: widget.child,
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -245,17 +253,21 @@ class _NeomorphicButtonState extends ConsumerState<NeomorphicButton>
     Color darkShadowColor,
     double elevation,
   ) {
+    final lightOffset = NeomorphicConfig.getShadowOffset(elevation, isLight: true);
+    final darkOffset = NeomorphicConfig.getShadowOffset(elevation);
+    final blurRadius = NeomorphicConfig.getBlurRadius(elevation);
+    
     return [
       BoxShadow(
-        color: darkShadowColor,
-        offset: Offset(elevation, elevation),
-        blurRadius: NeomorphicConfig.defaultShadowBlur,
+        color: darkShadowColor.withOpacity(NeomorphicConfig.darkShadowOpacity),
+        offset: darkOffset,
+        blurRadius: blurRadius,
         spreadRadius: NeomorphicConfig.defaultShadowSpread,
       ),
       BoxShadow(
-        color: lightShadowColor,
-        offset: Offset(-elevation * 0.5, -elevation * 0.5),
-        blurRadius: NeomorphicConfig.defaultShadowBlur * 0.7,
+        color: lightShadowColor.withOpacity(NeomorphicConfig.lightShadowOpacity),
+        offset: lightOffset,
+        blurRadius: blurRadius * 0.7,
         spreadRadius: NeomorphicConfig.defaultShadowSpread * 0.5,
       ),
     ];
@@ -266,20 +278,22 @@ class _NeomorphicButtonState extends ConsumerState<NeomorphicButton>
     Color darkShadowColor,
     double elevation,
   ) {
+    final lightOffset = NeomorphicConfig.getShadowOffset(elevation * 0.3, isLight: true);
+    final darkOffset = NeomorphicConfig.getShadowOffset(elevation * 0.5);
+    final blurRadius = NeomorphicConfig.getBlurRadius(elevation) * 0.5;
+    
     return [
       BoxShadow(
-        color: darkShadowColor,
-        offset: Offset(elevation * 0.5, elevation * 0.5),
-        blurRadius: NeomorphicConfig.defaultShadowBlur * 0.5,
+        color: darkShadowColor.withOpacity(NeomorphicConfig.darkShadowOpacity * 0.8),
+        offset: darkOffset,
+        blurRadius: blurRadius,
         spreadRadius: -NeomorphicConfig.defaultShadowSpread,
-        inset: true,
       ),
       BoxShadow(
-        color: lightShadowColor,
-        offset: Offset(-elevation * 0.3, -elevation * 0.3),
-        blurRadius: NeomorphicConfig.defaultShadowBlur * 0.3,
+        color: lightShadowColor.withOpacity(NeomorphicConfig.lightShadowOpacity * 0.6),
+        offset: -lightOffset,
+        blurRadius: blurRadius * 0.6,
         spreadRadius: -NeomorphicConfig.defaultShadowSpread * 0.5,
-        inset: true,
       ),
     ];
   }
