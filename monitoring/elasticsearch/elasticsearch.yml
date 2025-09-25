@@ -1,0 +1,83 @@
+cluster.name: "electra-logging"
+node.name: "electra-es-node-1"
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+# Security settings (basic)
+xpack.security.enabled: false
+xpack.monitoring.collection.enabled: true
+
+# Memory settings
+bootstrap.memory_lock: true
+
+# Discovery settings for single node
+discovery.type: single-node
+discovery.seed_hosts: []
+
+# Index lifecycle management
+action.destructive_requires_name: true
+indices.lifecycle.rollover.only_if_size_above: 50mb
+
+# Performance tuning
+thread_pool.write.queue_size: 200
+thread_pool.search.queue_size: 1000
+
+# Logging settings
+logger.level: INFO
+logger.org.elasticsearch.discovery: WARN
+logger.org.elasticsearch.transport: INFO
+
+# Index templates for log structure
+indices.template:
+  electra_logs:
+    index_patterns: ["electra-logs-*"]
+    settings:
+      number_of_shards: 1
+      number_of_replicas: 0
+      refresh_interval: "5s"
+      max_result_window: 50000
+    mappings:
+      properties:
+        "@timestamp":
+          type: date
+          format: "strict_date_optional_time||epoch_millis"
+        level:
+          type: keyword
+        logger:
+          type: keyword
+        message:
+          type: text
+          analyzer: standard
+        module:
+          type: keyword
+        function:
+          type: keyword
+        line:
+          type: integer
+        request_id:
+          type: keyword
+        user_id:
+          type: keyword
+        election_id:
+          type: keyword
+        event_type:
+          type: keyword
+        ip_address:
+          type: ip
+        user_agent:
+          type: text
+          analyzer: standard
+        status_code:
+          type: integer
+        response_time_ms:
+          type: float
+        
+# Cluster settings
+cluster.routing.allocation.disk.threshold_enabled: true
+cluster.routing.allocation.disk.watermark.low: "85%"
+cluster.routing.allocation.disk.watermark.high: "90%"
+cluster.routing.allocation.disk.watermark.flood_stage: "95%"

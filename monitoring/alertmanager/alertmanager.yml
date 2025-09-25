@@ -1,0 +1,157 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'electra-alerts@your-domain.com'
+  smtp_auth_username: 'electra-alerts@your-domain.com'
+  smtp_auth_password: 'your_KEY_goes_here'
+  slack_api_url: 'your_KEY_goes_here'
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'default-receiver'
+  routes:
+    # Critical alerts go to oncall immediately
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 5m
+    
+    # Security alerts have special handling
+    - match:
+        category: security
+      receiver: 'security-alerts'
+      group_wait: 0s
+      repeat_interval: 15m
+    
+    # Election alerts during voting periods
+    - match:
+        category: election
+      receiver: 'election-alerts'
+      repeat_interval: 30m
+
+    # Warning alerts batched
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 2h
+
+inhibit_rules:
+  # Silence warning if critical alert is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+  
+  # Silence individual node alerts if cluster is down
+  - source_match:
+      alertname: 'ElectraServiceDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['cluster']
+
+receivers:
+  - name: 'default-receiver'
+    slack_configs:
+      - api_url: 'your_KEY_goes_here'
+        channel: '#electra-alerts'
+        title: 'Electra Alert'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Severity:* {{ .Labels.severity }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+          {{ end }}
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    slack_configs:
+      - api_url: 'your_KEY_goes_here'
+        channel: '#electra-critical'
+        title: '🚨 CRITICAL: Electra Alert'
+        color: 'danger'
+        text: |
+          {{ range .Alerts }}
+          *CRITICAL ALERT:* {{ .Labels.alertname }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+          *Immediate action required!*
+          {{ end }}
+        send_resolved: true
+    webhook_configs:
+      - url: 'your_KEY_goes_here'
+        send_resolved: true
+        http_config:
+          basic_auth:
+            username: 'electra'
+            password: 'your_KEY_goes_here'
+
+  - name: 'security-alerts'
+    slack_configs:
+      - api_url: 'your_KEY_goes_here'
+        channel: '#electra-security'
+        title: '🔒 SECURITY: Electra Alert'
+        color: 'warning'
+        text: |
+          {{ range .Alerts }}
+          *SECURITY ALERT:* {{ .Labels.alertname }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+          *Security team notified*
+          {{ end }}
+        send_resolved: true
+    email_configs:
+      - to: 'security@your-domain.com'
+        from: 'electra-alerts@your-domain.com'
+        subject: 'SECURITY ALERT: {{ .GroupLabels.alertname }}'
+        body: |
+          Security alert detected in Electra system:
+          
+          {{ range .Alerts }}
+          Alert: {{ .Labels.alertname }}
+          Severity: {{ .Labels.severity }}
+          Summary: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}Runbook: {{ .Annotations.runbook_url }}{{ end }}
+          
+          {{ end }}
+
+  - name: 'election-alerts'
+    slack_configs:
+      - api_url: 'your_KEY_goes_here'
+        channel: '#electra-elections'
+        title: '🗳️ ELECTION: Electra Alert'
+        color: 'good'
+        text: |
+          {{ range .Alerts }}
+          *Election Alert:* {{ .Labels.alertname }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+  - name: 'warning-alerts'
+    slack_configs:
+      - api_url: 'your_KEY_goes_here'
+        channel: '#electra-alerts'
+        title: '⚠️ WARNING: Electra Alert'
+        color: 'warning'
+        text: |
+          {{ range .Alerts }}
+          *Warning:* {{ .Labels.alertname }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true

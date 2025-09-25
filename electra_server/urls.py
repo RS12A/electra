@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/admin/', include('electra_server.apps.admin.urls')),
     path('api/analytics/', include('electra_server.apps.analytics.urls')),
     path('', include('electra_server.apps.audit.urls')),
+    path('', include('django_prometheus.urls')),  # Metrics endpoint at /metrics
 ]
 
 # Serve media files in development

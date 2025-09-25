@@ -1,4 +1,5 @@
 import 'package:logger/logger.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Application logger with structured logging capabilities
 ///
@@ -150,9 +151,31 @@ class AppLogger {
     StackTrace? stackTrace, {
     bool isFatal = false,
   }) {
-    // TODO: Integrate with your crash reporting service (Firebase Crashlytics, Sentry, etc.)
-    // Example:
-    // FirebaseCrashlytics.instance.recordError(error, stackTrace, fatal: isFatal);
+    // Integrate with Sentry for error reporting
+    try {
+      if (error != null) {
+        Sentry.captureException(
+          error,
+          stackTrace: stackTrace,
+          withScope: (scope) {
+            scope.setLevel(isFatal ? SentryLevel.fatal : SentryLevel.error);
+            scope.setTag('source', 'flutter_app');
+            scope.setContext('message', {'message': message.toString()});
+          },
+        );
+      } else {
+        Sentry.captureMessage(
+          message.toString(),
+          level: isFatal ? SentryLevel.fatal : SentryLevel.error,
+          withScope: (scope) {
+            scope.setTag('source', 'flutter_app');
+          },
+        );
+      }
+    } catch (e) {
+      // Fallback logging if Sentry fails
+      print('Failed to report error to Sentry: $e');
+    }
   }
 
   /// Report security events for monitoring
