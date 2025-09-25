@@ -48,6 +48,20 @@ class UserFactory(DjangoModelFactory):
     password = "testpassword123"
 
 
+class AdminUserFactory(UserFactory):
+    """Factory for creating test admin users with proper staff_id."""
+    role = UserRole.ADMIN
+    matric_number = None
+    staff_id = Faker("numerify", text="ADM####")
+
+
+class StaffUserFactory(UserFactory):
+    """Factory for creating test staff users with proper staff_id."""
+    role = UserRole.STAFF
+    matric_number = None
+    staff_id = Faker("numerify", text="STF####")
+
+
 class ElectionFactory(DjangoModelFactory):
     """Factory for creating test elections."""
 
@@ -59,7 +73,7 @@ class ElectionFactory(DjangoModelFactory):
     start_time = LazyAttribute(lambda _: timezone.now() - timedelta(hours=1))
     end_time = LazyAttribute(lambda _: timezone.now() + timedelta(hours=2))
     status = ElectionStatus.ACTIVE
-    created_by = SubFactory(UserFactory, role=UserRole.ADMIN)
+    created_by = SubFactory(AdminUserFactory)
 
 
 class BallotTokenFactory(DjangoModelFactory):
@@ -71,6 +85,9 @@ class BallotTokenFactory(DjangoModelFactory):
     user = SubFactory(UserFactory)
     election = SubFactory(ElectionFactory)
     status = "issued"
+    signature = "test_signature_data"
+    issued_ip = "127.0.0.1"
+    issued_user_agent = "test-agent/1.0"
 
 
 class VoteModelTest(TestCase):
