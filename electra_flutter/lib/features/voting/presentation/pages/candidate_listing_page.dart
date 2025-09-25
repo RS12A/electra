@@ -33,7 +33,7 @@ class CandidateListingPage extends ConsumerStatefulWidget {
   ConsumerState<CandidateListingPage> createState() => _CandidateListingPageState();
 }
 
-class _CandidateListingPageState extends ConsumerState<CandidateListingPage>
+ _CandidateListingPageState extends ConsumerState<CandidateListingPage>
     with TickerProviderStateMixin {
   late List<AnimationController> _staggeredControllers;
   late AnimationController _fadeController;
