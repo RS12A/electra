@@ -1,0 +1,153 @@
+groups:
+  - name: electra-alerts
+    interval: 30s
+    rules:
+      # Service availability alerts
+      - alert: ElectraServiceDown
+        expr: up{job="electra-django"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Electra Django service is down"
+          description: "The Electra Django service has been down for more than 1 minute."
+          runbook_url: "https://github.com/RS12A/electra/blob/main/runbooks/incident_response.md#service-down"
+
+      # High error rate alerts
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(django_http_requests_total_by_view_transport_method{status=~"5.."}[5m]) /
+            rate(django_http_requests_total_by_view_transport_method[5m])
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+          category: errors
+        annotations:
+          summary: "High error rate detected (>5%)"
+          description: "Error rate is {{ $value }}% for the last 5 minutes."
+          runbook_url: "https://github.com/RS12A/electra/blob/main/runbooks/incident_response.md#high-error-rate"
+
+      # Database latency alerts
+      - alert: DatabaseHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(django_db_execute_seconds_bucket[5m])) > 0.5
+        for: 1m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Database latency is high (95th percentile >500ms)"
+          description: "95th percentile database query latency is {{ $value }}s"
+          runbook_url: "https://github.com/RS12A/electra/blob/main/runbooks/incident_response.md#database-issues"
+
+      # API response time alerts
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(django_http_request_duration_seconds_bucket[5m])
+          ) > 2.0
+        for: 2m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "API latency is high (95th percentile >2s)"
+          description: "95th percentile latency is {{ $value }}s"
+
+      # Disk usage alerts
+      - alert: DiskSpaceHigh
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / 
+           node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "Disk usage is high (>80%)"  
+          description: "Disk usage is {{ $value }}%"
+
+      # Critical disk usage
+      - alert: DiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / 
+           node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 1m
+        labels:
+          severity: critical
+          category: resources
+        annotations:
+          summary: "Disk usage is critical (>90%)"
+          description: "Disk usage is {{ $value }}%"
+
+      # Memory usage alerts
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "Memory usage is high (>85%)"
+          description: "Memory usage is {{ $value }}%"
+
+      # Election-specific alerts
+      - alert: VotingQueueBacklog
+        expr: django_queue_pending_jobs > 100
+        for: 5m
+        labels:
+          severity: warning
+          category: election
+        annotations:
+          summary: "Voting queue has high backlog"
+          description: "{{ $value }} jobs pending in voting queue"
+
+      - alert: AnomalousVotingPattern
+        expr: |
+          rate(electra_votes_cast_total[1m]) > 
+          avg_over_time(rate(electra_votes_cast_total[1m])[1h:1m]) * 3
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Anomalous voting pattern detected"
+          description: "Vote rate is 3x higher than normal: {{ $value }} votes/min"
+
+      # Security alerts
+      - alert: FailedAuthenticationSpike
+        expr: |
+          rate(django_http_requests_total_by_view_transport_method{view="auth_login",status="401"}[5m]) > 10
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "High number of failed authentication attempts"
+          description: "{{ $value }} failed login attempts per second"
+
+      # Database connection alerts
+      - alert: DatabaseConnectionsHigh
+        expr: django_db_connections_total > 80
+        for: 2m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "High number of database connections"
+          description: "{{ $value }} active database connections"
+
+      # Certificate expiry alerts
+      - alert: SSLCertificateExpiringSoon
+        expr: ssl_certificate_expiry_days < 30
+        for: 1h
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate expires in {{ $value }} days"

@@ -4,6 +4,7 @@ Base Django settings for electra_server project.
 import os
 import sys
 import uuid
+import logging
 from pathlib import Path
 from datetime import timedelta
 
@@ -46,6 +47,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'django_prometheus',
 ]
 
 LOCAL_APPS = [
@@ -62,10 +64,11 @@ LOCAL_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'electra_server.apps.audit.middleware.SecurityEnforcementMiddleware',
     'electra_server.apps.audit.middleware.TamperDetectionMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -75,6 +78,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'electra_server.middleware.RequestLoggingMiddleware',
     'electra_server.apps.audit.middleware.AuditTrailMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'electra_server.urls'
@@ -147,8 +151,51 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Monitoring and observability configuration
+PROMETHEUS_EXPORT_MIGRATIONS = False
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# OpenTelemetry settings
+OTEL_SERVICE_NAME = env('OTEL_SERVICE_NAME', default='electra-django')
+OTEL_RESOURCE_ATTRIBUTES = env('OTEL_RESOURCE_ATTRIBUTES', default='service.name=electra-django,service.version=1.0.0')
+OTEL_EXPORTER_JAEGER_AGENT_HOST = env('OTEL_EXPORTER_JAEGER_AGENT_HOST', default='jaeger')
+OTEL_EXPORTER_JAEGER_AGENT_PORT = env.int('OTEL_EXPORTER_JAEGER_AGENT_PORT', default=14268)
+OTEL_EXPORTER_JAEGER_ENDPOINT = env('OTEL_EXPORTER_JAEGER_ENDPOINT', default='http://jaeger:14268/api/traces')
+
+# Custom metrics configuration
+ELECTRA_METRICS_ENABLED = env.bool('ELECTRA_METRICS_ENABLED', default=True)
+ELECTRA_METRICS_PREFIX = env('ELECTRA_METRICS_PREFIX', default='electra')
+
+# Sentry configuration for error tracking (optional)
+SENTRY_DSN = env('SENTRY_DSN', default='your_KEY_goes_here')
+if SENTRY_DSN and SENTRY_DSN != 'your_KEY_goes_here':
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    
+    sentry_logging = LoggingIntegration(
+        level=logging.INFO,        # Capture info and above as breadcrumbs
+        event_level=logging.ERROR  # Send errors as events
+    )
+    
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(
+                transaction_style='url',
+                middleware_spans=True,
+                signals_spans=True,
+                cache_spans=True,
+            ),
+            sentry_logging,
+        ],
+        traces_sample_rate=0.1,  # 10% sampling rate for performance monitoring
+        send_default_pii=False,  # Don't send personally identifiable information
+        environment=env('DJANGO_ENV', default='development'),
+        release=env('RELEASE_VERSION', default='1.0.0'),
+    )
 
 # Django REST Framework
 REST_FRAMEWORK = {

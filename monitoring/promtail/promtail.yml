@@ -1,0 +1,241 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Django application logs
+  - job_name: electra-django
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: electra-django
+          service: django
+          environment: "${ENVIRONMENT:-development}"
+          __path__: /var/log/electra/django.log
+    
+    pipeline_stages:
+      # Parse JSON logs
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            message: message
+            request_id: data.request_id
+            user_id: data.user.id
+            method: data.method
+            path: data.path
+            status_code: data.status_code
+            response_time: data.response_time_ms
+      
+      # Set timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      
+      # Add labels
+      - labels:
+          level:
+          logger:
+          request_id:
+          method:
+          status_code:
+      
+      # Redact sensitive information
+      - replace:
+          expression: '(?i)(password|token|key|secret|matric)["\s]*[:=]["\s]*[^"\s,}]+'
+          replace: '${1}="[REDACTED]"'
+
+  # Container logs (Docker)
+  - job_name: containers
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: containers
+          __path__: /var/lib/docker/containers/*/*log
+    
+    pipeline_stages:
+      # Parse Docker JSON logs
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            time: time
+      
+      # Extract container info from path
+      - regex:
+          source: filename
+          expression: '/var/lib/docker/containers/(?P<container_id>[^/]+)/.*\.log'
+      
+      # Set timestamp
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      
+      # Add labels
+      - labels:
+          container_id:
+          stream:
+
+  # System logs
+  - job_name: syslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          __path__: /var/log/syslog
+    
+    pipeline_stages:
+      # Parse syslog format
+      - regex:
+          expression: '(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<hostname>\S+)\s+(?P<service>\S+):\s+(?P<message>.*)'
+      
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: 'Jan 02 15:04:05'
+      
+      # Add labels
+      - labels:
+          hostname:
+          service:
+
+  # Nginx access logs
+  - job_name: nginx-access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx-access
+          service: nginx
+          __path__: /var/log/nginx/access.log
+    
+    pipeline_stages:
+      # Parse nginx log format
+      - regex:
+          expression: '(?P<remote_addr>\S+)\s+-\s+(?P<remote_user>\S+)\s+\[(?P<timestamp>[^\]]+)\]\s+"(?P<method>\S+)\s+(?P<path>\S+)\s+(?P<protocol>\S+)"\s+(?P<status>\d+)\s+(?P<bytes_sent>\d+)\s+"(?P<referer>[^"]*)"\s+"(?P<user_agent>[^"]*)"'
+      
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: '02/Jan/2006:15:04:05 -0700'
+      
+      # Add labels
+      - labels:
+          method:
+          status:
+          remote_addr:
+      
+      # Anonymize IP addresses
+      - replace:
+          source: remote_addr
+          expression: '(\d+\.\d+\.\d+)\.\d+'
+          replace: '${1}.xxx'
+
+  # Nginx error logs
+  - job_name: nginx-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx-error
+          service: nginx
+          level: error
+          __path__: /var/log/nginx/error.log
+    
+    pipeline_stages:
+      # Parse nginx error format
+      - regex:
+          expression: '(?P<timestamp>\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2})\s+\[(?P<level>\w+)\]\s+(?P<message>.*)'
+      
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: '2006/01/02 15:04:05'
+      
+      # Add labels
+      - labels:
+          level:
+
+  # PostgreSQL logs
+  - job_name: postgresql
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: postgresql
+          service: postgres
+          __path__: /var/log/postgresql/*.log
+    
+    pipeline_stages:
+      # Parse PostgreSQL log format
+      - regex:
+          expression: '(?P<timestamp>\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+\w+)\s+\[(?P<pid>\d+)\]\s+(?P<level>\w+):\s+(?P<message>.*)'
+      
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.000 MST'
+      
+      # Add labels
+      - labels:
+          level:
+          pid:
+      
+      # Redact sensitive SQL
+      - replace:
+          expression: '(?i)(password|token)\s*=\s*["\']?[^"\s,)}]+'
+          replace: '${1}=[REDACTED]'
+
+  # Audit logs
+  - job_name: audit-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: audit-logs
+          service: electra
+          log_type: audit
+          __path__: /var/log/electra/audit-*.jsonl
+    
+    pipeline_stages:
+      # Parse JSON audit logs
+      - json:
+          expressions:
+            timestamp: timestamp
+            event_type: event_type
+            user_id: user_id
+            election_id: data.election_id
+            security_level: data.security_level
+            signature: signature
+      
+      # Set timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      
+      # Add labels
+      - labels:
+          event_type:
+          security_level:
+          election_id:
+      
+      # Mark as tamper-proof
+      - static_labels:
+          tamper_proof: "true"
+          verified: "pending"
+
+# Limits configuration
+limits_config:
+  readline_rate: 10000
+  readline_burst: 20000
+  max_streams: 0

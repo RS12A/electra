@@ -375,6 +375,9 @@ kubectl rollout restart deployment/electra-web -n electra-production
 # Application health
 curl -f https://electra.example.com/api/health/
 
+# Metrics endpoint
+curl -f https://electra.example.com/metrics
+
 # Response time monitoring  
 time curl -s https://electra.example.com/api/health/ >/dev/null
 
@@ -385,6 +388,109 @@ kubectl logs -l app=electra -n electra-production --since=5m | grep ERROR | wc -
 kubectl top pods -n electra-production
 ```
 
+### Monitoring Stack Health Checks
+
+```bash
+# Check all monitoring services
+./scripts/deploy_monitoring.sh status
+
+# Verify Prometheus targets
+curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.health != "up")'
+
+# Check Grafana datasources
+curl -H "Authorization: Bearer $GRAFANA_TOKEN" http://localhost:3000/api/datasources
+
+# Verify alert rules
+curl http://localhost:9090/api/v1/rules | jq '.data.groups[].rules[] | select(.state == "firing")'
+
+# Check log ingestion
+curl http://localhost:9200/_cat/indices/electra-logs-*
+```
+
+### Alert Response Procedures
+
+#### Critical Alert Response (P0)
+1. **Immediate Actions** (within 5 minutes):
+   ```bash
+   # Check service status
+   kubectl get pods -n electra-production
+   
+   # Check recent deployments
+   kubectl rollout history deployment/electra-web -n electra-production
+   
+   # View recent logs
+   kubectl logs -l app=electra -n electra-production --since=10m --tail=100
+   ```
+
+2. **Investigation**:
+   ```bash
+   # Check Grafana dashboards
+   # - System Health: http://localhost:3000/d/system-health
+   # - Election Turnout: http://localhost:3000/d/election-turnout
+   
+   # Query Prometheus for alerts
+   curl http://localhost:9090/api/v1/alerts
+   
+   # Check Jaeger for traces
+   # Navigate to http://localhost:16686 and search for recent errors
+   ```
+
+3. **Escalation**:
+   - If not resolved in 15 minutes, escalate to on-call engineer
+   - Page incident commander for election-related issues
+   - Notify security team for security alerts
+
+#### Performance Alert Response (P1)
+1. **Check System Resources**:
+   ```bash
+   # CPU and memory
+   kubectl top nodes
+   kubectl top pods -n electra-production
+   
+   # Database performance
+   curl http://localhost:9090/api/v1/query?query=django_db_execute_time
+   
+   # API response times
+   curl http://localhost:9090/api/v1/query?query=histogram_quantile(0.95,rate(django_http_request_duration_seconds_bucket[5m]))
+   ```
+
+2. **Scale Resources**:
+   ```bash
+   # Scale application pods
+   kubectl scale deployment electra-web --replicas=5 -n electra-production
+   
+   # Scale database connections (if needed)
+   kubectl patch deployment electra-web -n electra-production -p '{"spec":{"template":{"spec":{"containers":[{"name":"web","env":[{"name":"DB_MAX_CONNECTIONS","value":"50"}]}]}}}}'
+   ```
+
+#### Security Alert Response (P0)
+1. **Immediate Containment**:
+   ```bash
+   # Check failed login attempts
+   curl http://localhost:9200/electra-logs-*/_search -d '{
+     "query": {
+       "bool": {
+         "must": [
+           {"match": {"event_type": "security_failed_login"}},
+           {"range": {"@timestamp": {"gte": "now-1h"}}}
+         ]
+       }
+     }
+   }' | jq '.hits.total'
+   
+   # Review suspicious activities
+   kubectl logs -l app=electra -n electra-production | grep -i "suspicious\|unauthorized\|failed"
+   ```
+
+2. **Block Malicious IPs**:
+   ```bash
+   # Add IP to deny list (example)
+   kubectl patch configmap nginx-config -n electra-production --patch '{"data":{"deny-ips":"$MALICIOUS_IP"}}'
+   
+   # Restart nginx to apply changes
+   kubectl rollout restart deployment/electra-nginx -n electra-production
+   ```
+
 ### Setting Up Alerts
 
 **Prometheus AlertManager rules example:**
@@ -393,20 +499,86 @@ groups:
 - name: electra-alerts
   rules:
   - alert: ElectraDown
-    expr: up{job="electra"} == 0
+    expr: up{job="electra-django"} == 0
     for: 1m
     labels:
       severity: critical
     annotations:
       summary: "Electra service is down"
+      runbook_url: "https://github.com/RS12A/electra/blob/main/runbooks/incident_response.md#service-down"
       
   - alert: HighErrorRate  
-    expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+    expr: rate(django_http_requests_total_by_view_transport_method{status=~"5.."}[5m]) / rate(django_http_requests_total_by_view_transport_method[5m]) > 0.05
     for: 2m
     labels:
       severity: warning
     annotations:
-      summary: "High error rate detected"
+      summary: "High error rate detected (>5%)"
+      description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+      runbook_url: "https://github.com/RS12A/electra/blob/main/runbooks/incident_response.md#high-error-rate"
+
+  - alert: DatabaseHighLatency
+    expr: django_db_execute_time > 0.5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Database latency is high (>500ms)"
+      description: "Database query latency is {{ $value }}s"
+      
+  - alert: VotingQueueBacklog
+    expr: electra_vote_queue_pending > 100
+    for: 5m
+    labels:
+      severity: warning
+      category: election
+    annotations:
+      summary: "Voting queue has high backlog"
+      description: "{{ $value }} votes pending in queue for more than 5 minutes"
+```
+
+### Monitoring Maintenance
+
+#### Daily Tasks
+```bash
+# Check monitoring stack health
+./scripts/deploy_monitoring.sh test
+
+# Verify audit log integrity (last 7 days)
+./scripts/verify_audit_logs.py --public-key keys/audit_public.pem --log-dir audit_logs
+
+# Review overnight alerts
+curl http://localhost:9093/api/v1/alerts?silenced=false | jq '.data[] | select(.startsAt | . < (now - 24*3600))'
+
+# Check disk usage for monitoring volumes
+df -h | grep -E "(prometheus|grafana|elasticsearch)"
+```
+
+#### Weekly Tasks
+```bash
+# Backup Grafana dashboards
+curl -H "Authorization: Bearer $GRAFANA_TOKEN" http://localhost:3000/api/search | \
+  jq -r '.[].uid' | xargs -I {} curl -H "Authorization: Bearer $GRAFANA_TOKEN" \
+  http://localhost:3000/api/dashboards/uid/{} > dashboards_backup.json
+
+# Clean up old logs
+curl -X DELETE http://localhost:9200/electra-logs-$(date -d '30 days ago' +%Y.%m.%d)
+
+# Review alert fatigue
+curl http://localhost:9093/api/v1/alerts | jq '[.data[].labels.alertname] | group_by(.) | map({alert: .[0], count: length}) | sort_by(.count) | reverse'
+```
+
+#### Monthly Tasks
+```bash
+# Update monitoring stack
+./scripts/deploy_monitoring.sh redeploy --environment production
+
+# Review and optimize retention policies
+# Check Prometheus storage usage
+curl http://localhost:9090/api/v1/label/__name__/values | jq 'length'
+
+# Generate monitoring report
+./scripts/generate_monitoring_report.py --month $(date +%Y-%m)
 ```
 
 ## Communication Templates

@@ -45,6 +45,7 @@ dependencies:
   
   # Logging & Error Reporting
   logger: ^2.0.2+1
+  sentry_flutter: ^7.14.0
   
   # UI & Theming
   cupertino_icons: ^1.0.2
