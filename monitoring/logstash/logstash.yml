@@ -1,0 +1,28 @@
+http.host: "0.0.0.0"
+xpack.monitoring.enabled: false
+xpack.monitoring.elasticsearch.hosts: ["http://elasticsearch:9200"]
+
+# Pipeline configuration
+pipeline.workers: 2
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+
+# Logging configuration
+log.level: info
+path.logs: /var/log/logstash
+
+# Performance settings
+pipeline.unsafe_shutdown: false
+config.reload.automatic: true
+config.reload.interval: 3s
+
+# Dead letter queue
+dead_letter_queue.enable: true
+path.dead_letter_queue: /var/lib/logstash/dead_letter_queue
+
+# Security settings
+api.ssl.enabled: false
+api.auth.type: none
+
+# Monitoring
+monitoring.enabled: false

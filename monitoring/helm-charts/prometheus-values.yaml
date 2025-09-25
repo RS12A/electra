@@ -1,0 +1,244 @@
+# Prometheus Helm Chart Values for Electra
+# Reference: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+
+# Global settings
+fullnameOverride: "electra-prometheus"
+namespaceOverride: "electra-monitoring"
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # Retention settings
+    retention: 15d
+    retentionSize: 50GB
+    
+    # Storage configuration
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp2
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    
+    # Resource limits
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    
+    # Service monitor selector
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector:
+      matchLabels:
+        prometheus: kube-prometheus
+    
+    # Rule selector
+    ruleSelectorNilUsesHelmValues: false
+    ruleSelector:
+      matchLabels:
+        prometheus: kube-prometheus
+    
+    # Additional scrape configs
+    additionalScrapeConfigs:
+      - job_name: 'electra-django'
+        static_configs:
+          - targets: ['electra-web:8000']
+        metrics_path: '/metrics'
+        scrape_interval: 15s
+        scrape_timeout: 10s
+        honor_labels: true
+        
+      - job_name: 'electra-flutter-logs'
+        static_configs:
+          - targets: ['electra-web:5000']
+        metrics_path: '/logs/metrics'
+        scrape_interval: 30s
+
+# Grafana configuration
+grafana:
+  enabled: true
+  adminPassword: "your_KEY_goes_here"
+  
+  # Persistence
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: gp2
+  
+  # Resources
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  
+  # Grafana configuration
+  grafana.ini:
+    server:
+      domain: grafana.electra.local
+      root_url: "http://grafana.electra.local:3000"
+    
+    security:
+      disable_gravatar: true
+      
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+      
+    snapshots:
+      external_enabled: false
+      
+    users:
+      allow_sign_up: false
+      auto_assign_org: true
+      auto_assign_org_role: Viewer
+  
+  # Default dashboards
+  defaultDashboardsEnabled: true
+  
+  # Additional dashboards
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'electra-dashboards'
+        orgId: 1
+        folder: 'Electra'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/electra
+  
+  # Sidecar for dashboard loading
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+      folder: /var/lib/grafana/dashboards
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+
+# Alertmanager configuration
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    # Storage
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp2
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    
+    # Resources
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    
+    # Configuration
+    configSecret: electra-alertmanager-config
+    
+    # External URL for proper link generation
+    externalUrl: http://alertmanager.electra.local:9093
+
+# Node Exporter
+nodeExporter:
+  enabled: true
+
+# Kube State Metrics
+kubeStateMetrics:
+  enabled: true
+
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+# Service monitors for additional services
+additionalServiceMonitors:
+  - name: electra-app
+    selector:
+      matchLabels:
+        app: electra
+    endpoints:
+      - port: http
+        path: /metrics
+        interval: 15s
+  
+  - name: electra-postgres
+    selector:
+      matchLabels:
+        app: postgres-exporter
+    endpoints:
+      - port: metrics
+        interval: 30s
+  
+  - name: electra-redis
+    selector:
+      matchLabels:
+        app: redis-exporter
+    endpoints:
+      - port: metrics
+        interval: 30s
+
+# Additional Prometheus rules
+additionalPrometheusRulesMap:
+  electra-rules:
+    groups:
+    - name: electra.election.rules
+      rules:
+      - alert: ElectionTurnoutLow
+        expr: (electra_votes_cast_total / electra_registered_voters_total) * 100 < 10
+        for: 30m
+        labels:
+          severity: warning
+          category: election
+        annotations:
+          summary: "Election turnout is low"
+          description: "Turnout is {{ $value }}% after 30 minutes"
+      
+      - alert: VoteProcessingBacklog
+        expr: electra_vote_queue_pending > 50
+        for: 10m
+        labels:
+          severity: warning
+          category: election
+        annotations:
+          summary: "Vote processing backlog detected"
+          description: "{{ $value }} votes pending processing"
+    
+    - name: electra.security.rules
+      rules:
+      - alert: SuspiciousLoginActivity
+        expr: increase(electra_failed_login_attempts_total[5m]) > 20
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Suspicious login activity detected"
+          description: "{{ $value }} failed login attempts in 5 minutes"
