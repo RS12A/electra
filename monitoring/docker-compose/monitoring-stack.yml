@@ -134,7 +134,8 @@ services:
     ports:
       - "9187:9187"
     environment:
-      - DATA_SOURCE_NAME=postgresql://postgres:postgres123@db:5432/electra_db?sslmode=disable
+      # Use environment variables for credentials and enable SSL for production
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSLMODE}
     restart: unless-stopped
     networks:
       - monitoring
