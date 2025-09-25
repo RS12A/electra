@@ -1,5 +1,8 @@
 import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 
 /// Application logger with structured logging capabilities
 ///
@@ -14,8 +17,23 @@ class AppLogger {
     Level level = Level.info,
     bool enableConsole = true,
     bool enableFile = true,
-  }) {
+  }) async {
     if (_initialized) return;
+
+    List<LogOutput> outputs = [];
+    
+    if (enableConsole) {
+      outputs.add(ConsoleOutput());
+    }
+    
+    if (enableFile) {
+      try {
+        final fileOutput = await FileOutput.create();
+        outputs.add(fileOutput);
+      } catch (e) {
+        print('Failed to initialize file logging: $e');
+      }
+    }
 
     _logger = Logger(
       level: level,
@@ -27,11 +45,11 @@ class AppLogger {
         printEmojis: true,
         printTime: true,
       ),
-      output: enableConsole ? ConsoleOutput() : null,
+      output: outputs.isNotEmpty ? MultiOutput(outputs) : ConsoleOutput(),
     );
 
     _initialized = true;
-    info('Logger initialized');
+    info('Logger initialized with ${outputs.length} outputs');
   }
 
   /// Log debug messages (only in debug mode)
@@ -180,9 +198,25 @@ class AppLogger {
 
   /// Report security events for monitoring
   static void _reportSecurityEvent(String event, String? details) {
-    // TODO: Integrate with security monitoring service
-    // Example:
-    // SecurityMonitor.reportEvent(event, details);
+    // Integrate with security monitoring service
+    try {
+      // Report to Sentry with security tag
+      Sentry.captureMessage(
+        'Security Event: $event${details != null ? ' - $details' : ''}',
+        level: SentryLevel.warning,
+        withScope: (scope) {
+          scope.setTag('type', 'security_event');
+          scope.setTag('event', event);
+          scope.setContext('security', {
+            'event': event,
+            'details': details,
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        },
+      );
+    } catch (e) {
+      print('Failed to report security event: $e');
+    }
   }
 }
 
@@ -198,13 +232,77 @@ class ConsoleOutput extends LogOutput {
 
 /// File output for logging to local files
 class FileOutput extends LogOutput {
-  final String filePath;
+  final File _logFile;
+  static const int maxFileSize = 10 * 1024 * 1024; // 10MB
+  static const int maxBackupFiles = 5;
 
-  FileOutput(this.filePath);
+  FileOutput._(this._logFile);
+
+  /// Create a FileOutput instance with proper file setup
+  static Future<FileOutput> create() async {
+    final documentsDir = await getApplicationDocumentsDirectory();
+    final logsDir = Directory('${documentsDir.path}/logs');
+    
+    // Create logs directory if it doesn't exist
+    if (!await logsDir.exists()) {
+      await logsDir.create(recursive: true);
+    }
+    
+    final logFile = File('${logsDir.path}/app.log');
+    
+    // Rotate log files if current file is too large
+    if (await logFile.exists()) {
+      final fileStat = await logFile.stat();
+      if (fileStat.size > maxFileSize) {
+        await _rotateLogFiles(logsDir);
+      }
+    }
+    
+    return FileOutput._(logFile);
+  }
+
+  /// Rotate log files to prevent them from getting too large
+  static Future<void> _rotateLogFiles(Directory logsDir) async {
+    // Move app.log to app.log.1, app.log.1 to app.log.2, etc.
+    for (int i = maxBackupFiles - 1; i >= 1; i--) {
+      final oldFile = File('${logsDir.path}/app.log.$i');
+      final newFile = File('${logsDir.path}/app.log.${i + 1}');
+      
+      if (await oldFile.exists()) {
+        if (i == maxBackupFiles - 1) {
+          // Delete the oldest backup
+          await oldFile.delete();
+        } else {
+          await oldFile.rename(newFile.path);
+        }
+      }
+    }
+    
+    // Move current log to backup
+    final currentLog = File('${logsDir.path}/app.log');
+    if (await currentLog.exists()) {
+      await currentLog.rename('${logsDir.path}/app.log.1');
+    }
+  }
 
   @override
   void output(OutputEvent event) {
-    // TODO: Implement file logging
-    // Write event.lines to file
+    try {
+      final timestamp = DateTime.now().toIso8601String();
+      final logEntry = {
+        'timestamp': timestamp,
+        'level': event.level.name,
+        'lines': event.lines,
+      };
+      
+      final logLine = '${jsonEncode(logEntry)}\n';
+      _logFile.writeAsStringSync(logLine, mode: FileMode.append);
+    } catch (e) {
+      // Fallback to console if file writing fails
+      print('Failed to write to log file: $e');
+      for (var line in event.lines) {
+        print(line);
+      }
+    }
   }
 }

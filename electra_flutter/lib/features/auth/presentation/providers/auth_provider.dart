@@ -342,9 +342,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(isLoading: true, clearError: true);
     
-    // TODO: Call repository logout method to clear tokens and data
-    
-    state = const AuthState(); // Reset to initial state
+    try {
+      // Call repository logout method to clear tokens and data 
+      final result = await _loginUseCase.logout();
+      
+      result.fold(
+        (failure) {
+          // Even if server logout fails, clear local state
+          state = const AuthState(); // Reset to initial state
+        },
+        (_) {
+          state = const AuthState(); // Reset to initial state
+        },
+      );
+    } catch (e) {
+      // Always clear local state even on error
+      state = const AuthState(); // Reset to initial state
+    }
   }
 
   /// Clear error message

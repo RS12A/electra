@@ -423,54 +423,51 @@ final themeControllerProvider = ChangeNotifierProvider<ThemeController>((ref) {
 /// Mock storage service that implements the interface needed by ThemeController
 class _MockStorageService implements StorageService {
   final Map<String, String> _storage = {};
+  final Map<String, String> _secureStorage = {};
   
   @override
   Future<String?> readSecure(String key) async {
-    return _storage[key];
+    return _secureStorage[key];
   }
   
   @override
   Future<void> storeSecure(String key, String value) async {
-    _storage[key] = value;
+    _secureStorage[key] = value;
   }
   
-  // Implement all required StorageService methods.
-  // Only readSecure and storeSecure are used by ThemeController.
-  // For unused methods, throw UnimplementedError to maintain type safety.
-
   @override
   Future<void> deleteSecure(String key) async {
-    throw UnimplementedError('deleteSecure is not implemented in _MockStorageService');
+    _secureStorage.remove(key);
   }
 
   @override
   Future<void> clearSecure() async {
-    throw UnimplementedError('clearSecure is not implemented in _MockStorageService');
+    _secureStorage.clear();
   }
 
   @override
   Future<Map<String, String>> readAllSecure() async {
-    throw UnimplementedError('readAllSecure is not implemented in _MockStorageService');
+    return Map<String, String>.from(_secureStorage);
   }
 
   @override
   Future<void> store(String key, String value) async {
-    throw UnimplementedError('store is not implemented in _MockStorageService');
+    _storage[key] = value;
   }
 
   @override
   Future<String?> read(String key) async {
-    throw UnimplementedError('read is not implemented in _MockStorageService');
+    return _storage[key];
   }
 
   @override
   Future<void> delete(String key) async {
-    throw UnimplementedError('delete is not implemented in _MockStorageService');
+    _storage.remove(key);
   }
 
   @override
   Future<void> clear() async {
-    throw UnimplementedError('clear is not implemented in _MockStorageService');
+    _storage.clear();
   }
 }
 

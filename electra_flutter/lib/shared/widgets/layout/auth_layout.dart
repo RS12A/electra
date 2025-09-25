@@ -76,7 +76,7 @@ class AuthLayout extends StatelessWidget {
   Widget _buildHeader(ThemeData theme, bool isTablet) {
     return Column(
       children: [
-        // University logo placeholder
+        // KWASU University logo
         Container(
           width: isTablet ? 120 : 80,
           height: isTablet ? 120 : 80,
@@ -91,10 +91,28 @@ class AuthLayout extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            Icons.how_to_vote,
-            size: isTablet ? 60 : 40,
-            color: KWASUColors.primaryBlue,
+          child: ClipOval(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.school,
+                    size: isTablet ? 40 : 28,
+                    color: KWASUColors.primaryBlue,
+                  ),
+                  Text(
+                    'KWASU',
+                    style: TextStyle(
+                      color: KWASUColors.primaryBlue,
+                      fontSize: isTablet ? 14 : 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
 
