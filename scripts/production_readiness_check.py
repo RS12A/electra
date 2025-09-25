@@ -357,7 +357,9 @@ class ProductionReadinessChecker:
         
         # Save report to file
         report_file = self.base_dir / 'production_readiness_report.json'
-        with open(report_file, 'w') as f:
+        # Create the report file with restrictive permissions (600)
+        fd = os.open(report_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'w') as f:
             json.dump(report, f, indent=2, default=str)
         print(f"\n📄 Detailed report saved to: {report_file}")
         
