@@ -312,7 +312,37 @@ class AnalyticsRequestSerializer(serializers.Serializer):
 
 class TurnoutRequestSerializer(AnalyticsRequestSerializer):
     """Serializer for turnout metrics requests."""
-    pass
+    
+    include_trends = serializers.BooleanField(
+        default=False,
+        help_text='Include trend analysis data in the response'
+    )
+    
+    category_filter = serializers.ChoiceField(
+        choices=[
+            ('all', 'All Categories'),
+            ('excellent', 'Excellent (>80%)'),
+            ('good', 'Good (60-80%)'),
+            ('fair', 'Fair (40-60%)'),
+            ('critical', 'Critical (<40%)')
+        ],
+        default='all',
+        required=False,
+        help_text='Filter elections by turnout category'
+    )
+    
+    status_filter = serializers.ChoiceField(
+        choices=[
+            ('all', 'All Statuses'),
+            ('draft', 'Draft'),
+            ('active', 'Active'),
+            ('completed', 'Completed'),
+            ('cancelled', 'Cancelled')
+        ],
+        default='all',
+        required=False,
+        help_text='Filter elections by status'
+    )
 
 
 class ParticipationRequestSerializer(AnalyticsRequestSerializer):
