@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-09-25 14:07:54.462732",
+  "summary": {
+    "total_checks": 24,
+    "passed": 14,
+    "warnings": 8,
+    "errors": 2,
+    "production_ready": false
+  },
+  "passed_checks": [
+    "Private RSA key found with secure permissions",
+    "Public RSA key found",
+    "DEBUG mode is disabled",
+    "Flutter pubspec.yaml found",
+    "Workflow found: ci.yml",
+    "Workflow found: cd.yml",
+    "Workflow found: security-scan.yml",
+    "Dockerfile found",
+    "docker-compose.yml found",
+    "Database backup script found",
+    "Found 31 backend test files",
+    "Found 24 Flutter test files",
+    "Documentation found: README.md",
+    "Documentation found: security.md"
+  ],
+  "warnings": [
+    "SSL redirect is disabled - enable for production",
+    "ALLOWED_HOSTS contains localhost - ensure production domains are configured",
+    "Sentry error tracking not configured",
+    "Prometheus metrics disabled",
+    "Flutter not available or analysis timed out",
+    "Backup encryption key not configured",
+    "SSL certificate not configured - ensure proper SSL setup",
+    "SSL private key not configured"
+  ],
+  "errors": [
+    "Missing or placeholder environment variables: DJANGO_SECRET_KEY, DATABASE_URL, JWT_SECRET_KEY, EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, REDIS_URL",
+    "DATABASE_URL must use PostgreSQL for production"
+  ],
+  "recommendations": [
+    "Fix all error conditions before deploying to production",
+    "Address warning conditions for optimal production setup"
+  ]
+}
