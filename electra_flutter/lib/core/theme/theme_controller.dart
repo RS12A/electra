@@ -434,11 +434,43 @@ class _MockStorageService implements StorageService {
     _storage[key] = value;
   }
   
-  // Required by StorageService interface but not used by ThemeController
+  // Implement all required StorageService methods.
+  // Only readSecure and storeSecure are used by ThemeController.
+  // For unused methods, throw UnimplementedError to maintain type safety.
+
   @override
-  dynamic noSuchMethod(Invocation invocation) {
-    // Return default values for unimplemented methods
-    return super.noSuchMethod(invocation);
+  Future<void> deleteSecure(String key) async {
+    throw UnimplementedError('deleteSecure is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> clearSecure() async {
+    throw UnimplementedError('clearSecure is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<Map<String, String>> readAllSecure() async {
+    throw UnimplementedError('readAllSecure is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> store(String key, String value) async {
+    throw UnimplementedError('store is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<String?> read(String key) async {
+    throw UnimplementedError('read is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    throw UnimplementedError('delete is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> clear() async {
+    throw UnimplementedError('clear is not implemented in _MockStorageService');
   }
 }
 
