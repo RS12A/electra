@@ -52,37 +52,6 @@ class AuditLogPermission(permissions.BasePermission):
         if not request.user.is_active:
             return False
         
-        # Log the access attempt for security monitoring
-        from .models import AuditLog, AuditActionType
-        
-        # Get client IP
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip_address = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip_address = request.META.get('REMOTE_ADDR', '')
-        
-        # Create audit entry for access attempt
-        try:
-            AuditLog.create_audit_entry(
-                action_type=AuditActionType.ADMIN_ACTION,
-                action_description=f"Audit log access attempted via {view.__class__.__name__}",
-                user=request.user,
-                ip_address=ip_address,
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                session_key=request.session.session_key or '',
-                target_resource_type='AuditLog',
-                outcome='success',
-                metadata={
-                    'view_name': view.__class__.__name__,
-                    'method': request.method,
-                    'path': request.path,
-                }
-            )
-        except Exception:
-            # Don't fail permission check due to audit logging issues
-            pass
-        
         return True
     
     def has_object_permission(self, request: Request, view, obj) -> bool:

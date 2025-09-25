@@ -107,6 +107,8 @@ class AuditLog(models.Model):
     
     # Request context
     ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
         help_text='IP address from which action was performed'
     )
     
@@ -282,7 +284,7 @@ class AuditLog(models.Model):
             'action_description': self.action_description,
             'user_identifier': self.user_identifier,
             'session_key': self.session_key,
-            'ip_address': self.ip_address,
+            'ip_address': str(self.ip_address) if self.ip_address else '',
             'user_agent': self.user_agent,
             'target_resource_type': self.target_resource_type,
             'target_resource_id': self.target_resource_id,
@@ -411,7 +413,7 @@ class AuditLog(models.Model):
         action_type: str,
         action_description: str,
         user: Optional[User] = None,
-        ip_address: str = '',
+        ip_address: Optional[str] = None,
         user_agent: str = '',
         session_key: str = '',
         election: Optional[Election] = None,
@@ -428,7 +430,7 @@ class AuditLog(models.Model):
             action_type: Type of action being audited
             action_description: Detailed description of the action
             user: User who performed the action
-            ip_address: IP address from request
+            ip_address: IP address from request (optional)
             user_agent: User agent from request
             session_key: Django session key
             election: Election context
