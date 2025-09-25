@@ -79,6 +79,7 @@ LOCAL_APPS = [
     'electra_server.apps.admin',
     'electra_server.apps.analytics',
     'apps.health',
+    'apps.auth_app',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -407,4 +408,4 @@ except ImportError:
     pass
 
 # Custom user model
-AUTH_USER_MODEL = 'electra_auth.User'
+AUTH_USER_MODEL = 'auth.User'
