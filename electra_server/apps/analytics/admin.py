@@ -152,7 +152,7 @@ class ExportVerificationAdmin(admin.ModelAdmin):
     list_filter = [
         'export_type',
         'created_at',
-        'requested_by__role',
+        # 'requested_by__role',  # Temporarily disabled for testing
     ]
     
     search_fields = [

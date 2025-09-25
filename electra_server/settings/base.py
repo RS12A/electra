@@ -73,7 +73,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'electra_server.apps.auth',
     'electra_server.apps.elections',
-    'electra_server.apps.ballots',
+    'electra_server.apps.ballots', 
     'electra_server.apps.votes',
     'electra_server.apps.audit',
     'electra_server.apps.admin',

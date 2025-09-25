@@ -113,6 +113,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Override groups and user_permissions to avoid conflicts
+    groups = models.ManyToManyField(
+        'auth.Group',
+        blank=True,
+        related_name='electra_users',
+        verbose_name='groups',
+        help_text='The groups this user belongs to.'
+    )
+    
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        blank=True,
+        related_name='electra_users',
+        verbose_name='user permissions',
+        help_text='Specific permissions for this user.'
+    )
+    
     # Manager
     objects = UserManager()
     
@@ -121,7 +138,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['full_name']
     
     class Meta:
-        db_table = 'auth_user'
+        db_table = 'electra_auth_user'
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         indexes = [
@@ -250,7 +267,7 @@ class PasswordResetOTP(models.Model):
     objects = PasswordResetOTPManager()
     
     class Meta:
-        db_table = 'auth_password_reset_otp'
+        db_table = 'electra_auth_password_reset_otp'
         verbose_name = 'Password Reset OTP'
         verbose_name_plural = 'Password Reset OTPs'
         ordering = ['-created_at']
@@ -332,7 +349,7 @@ class LoginAttempt(models.Model):
     objects = LoginAttemptManager()
     
     class Meta:
-        db_table = 'auth_login_attempt'
+        db_table = 'electra_auth_login_attempt'
         verbose_name = 'Login Attempt'
         verbose_name_plural = 'Login Attempts'
         ordering = ['-timestamp']

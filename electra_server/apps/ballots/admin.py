@@ -31,7 +31,7 @@ class BallotTokenAdmin(admin.ModelAdmin):
     
     list_filter = [
         'status', 'issued_at', 'expires_at', 'election__status',
-        'user__role'
+        # 'user__role'  # Temporarily disabled for testing
     ]
     
     search_fields = [

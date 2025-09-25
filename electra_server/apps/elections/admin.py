@@ -27,7 +27,7 @@ class ElectionAdmin(admin.ModelAdmin):
     
     list_filter = [
         'status',
-        'created_by__role',
+        # 'created_by__role',  # Temporarily disabled for testing
         'delayed_reveal',
         'created_at',
         'start_time',

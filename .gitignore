@@ -18,6 +18,25 @@ develop-eggs/
 dist/
 downloads/
 eggs/
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+coverage.xml
+coverage.json
+junit.xml
+.tox/
+test-results.json
+test-report.md
+bandit-report.json
+safety-report.json
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
 .eggs/
 lib64/
 parts/

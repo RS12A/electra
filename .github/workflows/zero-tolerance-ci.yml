@@ -1,0 +1,404 @@
+name: Zero-Tolerance CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  
+jobs:
+  # Backend Tests
+  django-tests:
+    name: Django Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: electra_test
+          POSTGRES_USER: electra_test  
+          POSTGRES_DB: electra_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Set up environment
+      run: |
+        cp .env.test.complete .env
+        echo "DATABASE_URL=postgresql://electra_test:electra_test@localhost:5432/electra_test" >> .env
+        echo "REDIS_URL=redis://localhost:6379/0" >> .env
+        
+    - name: Run Django system checks
+      run: |
+        python manage.py check --deploy --fail-level WARNING
+        
+    - name: Run migrations
+      run: |
+        python manage.py migrate --settings=electra_server.settings.test
+        
+    - name: Run comprehensive tests with coverage
+      run: |
+        python -m pytest \
+          tests/ \
+          electra_server/apps/ \
+          --cov=electra_server \
+          --cov=apps \
+          --cov-report=xml:coverage.xml \
+          --cov-report=html:htmlcov \
+          --cov-report=term-missing \
+          --cov-fail-under=80 \
+          --junit-xml=junit.xml \
+          --maxfail=1 \
+          --tb=short \
+          -v
+          
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: backend
+        name: backend-coverage
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-backend
+        path: |
+          junit.xml
+          htmlcov/
+          coverage.xml
+
+  # Code Quality & Security
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install bandit safety
+        
+    - name: Run Black formatting check
+      run: |
+        black --check --diff .
+        
+    - name: Run isort import sorting check
+      run: |
+        isort --check-only --diff .
+        
+    - name: Run flake8 linting
+      run: |
+        flake8 . --max-line-length=88 --extend-ignore=E203,W503 --statistics
+        
+    - name: Run Bandit security linting
+      run: |
+        bandit -r electra_server/ -f json -o bandit-report.json
+        bandit -r electra_server/ --severity-level medium
+        
+    - name: Run Safety security check
+      run: |
+        safety check --json --output safety-report.json
+        safety check
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  # Security Tests
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Set up test environment
+      run: |
+        cp .env.test.complete .env
+        
+    - name: Run security-specific tests
+      run: |
+        python -m pytest \
+          tests/test_security_comprehensive.py \
+          --maxfail=1 \
+          --tb=short \
+          -v
+          
+    - name: Run Django security check
+      run: |
+        python manage.py check --deploy --settings=electra_server.settings.prod
+
+  # Frontend Tests (when Flutter is available)
+  flutter-tests:
+    name: Flutter Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check if Flutter is available
+      id: flutter-check
+      run: |
+        if [ -f "electra_flutter/pubspec.yaml" ] && [ ! -f "electra_flutter/flutter.tar.xz" ]; then
+          echo "flutter_available=true" >> $GITHUB_OUTPUT
+        else
+          echo "flutter_available=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Set up Flutter
+      if: steps.flutter-check.outputs.flutter_available == 'true'
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.0'
+        
+    - name: Get Flutter dependencies
+      if: steps.flutter-check.outputs.flutter_available == 'true'
+      run: |
+        cd electra_flutter
+        flutter pub get
+        
+    - name: Run Flutter analyzer
+      if: steps.flutter-check.outputs.flutter_available == 'true'
+      run: |
+        cd electra_flutter
+        flutter analyze --fatal-infos --fatal-warnings
+        
+    - name: Run Flutter tests
+      if: steps.flutter-check.outputs.flutter_available == 'true'
+      run: |
+        cd electra_flutter
+        flutter test --coverage --reporter=json > test-results.json
+        
+    - name: Upload Flutter test results
+      if: steps.flutter-check.outputs.flutter_available == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-flutter
+        path: |
+          electra_flutter/test-results.json
+          electra_flutter/coverage/
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [django-tests]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: electra_test
+          POSTGRES_USER: electra_test
+          POSTGRES_DB: electra_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Set up environment
+      run: |
+        cp .env.test.complete .env
+        echo "DATABASE_URL=postgresql://electra_test:electra_test@localhost:5432/electra_test" >> .env
+        echo "REDIS_URL=redis://localhost:6379/0" >> .env
+        
+    - name: Run migrations
+      run: |
+        python manage.py migrate --settings=electra_server.settings.test
+        
+    - name: Run API integration tests
+      run: |
+        python -m pytest \
+          tests/test_api_integration.py \
+          --maxfail=1 \
+          --tb=short \
+          -v
+          
+    - name: Run deployment readiness tests
+      run: |
+        python scripts/test_deployment.py --skip-services
+
+  # Build & Deploy (on success)
+  build-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: [django-tests, code-quality, security-tests, integration-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Build Docker images
+      run: |
+        docker build -t electra-backend:latest .
+        
+    - name: Run security scan on Docker image
+      run: |
+        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          -v $PWD:/tmp/myapp aquasec/trivy image \
+          --exit-code 1 --severity HIGH,CRITICAL \
+          electra-backend:latest
+          
+    - name: Deploy to staging (mock)
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        echo "All checks passed! Ready for production deployment."
+
+  # Generate Final Report
+  test-report:
+    name: Generate Test Report
+    runs-on: ubuntu-latest
+    needs: [django-tests, code-quality, security-tests, flutter-tests, integration-tests]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      
+    - name: Generate comprehensive report
+      run: |
+        echo "# 🧪 Electra Test Report" > test-report.md
+        echo "## Summary" >> test-report.md
+        echo "- Django Tests: ${{ needs.django-tests.result }}" >> test-report.md
+        echo "- Code Quality: ${{ needs.code-quality.result }}" >> test-report.md
+        echo "- Security Tests: ${{ needs.security-tests.result }}" >> test-report.md
+        echo "- Flutter Tests: ${{ needs.flutter-tests.result }}" >> test-report.md
+        echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> test-report.md
+        echo "" >> test-report.md
+        echo "## Coverage Reports" >> test-report.md
+        echo "Coverage reports are available in the artifacts." >> test-report.md
+        
+    - name: Upload final report
+      uses: actions/upload-artifact@v3
+      with:
+        name: final-test-report
+        path: test-report.md
+        
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('test-report.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: report
+          });
+
+# Prevent merge if any critical checks fail
+  block-merge:
+    name: Block Merge on Failure
+    runs-on: ubuntu-latest
+    needs: [django-tests, code-quality, security-tests]
+    if: failure()
+    
+    steps:
+    - name: Block merge
+      run: |
+        echo "❌ Critical checks failed. Merge blocked."
+        echo "Please fix all issues before merging."
+        exit 1
