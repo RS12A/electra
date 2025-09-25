@@ -10,11 +10,12 @@ from typing import Dict, Any
 
 from django.db import transaction
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from rest_framework import generics, views, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from electra_server.apps.ballots.models import BallotToken, BallotTokenUsageLog
+from electra_server.apps.ballots.models import BallotToken, BallotTokenUsageLog, BallotTokenStatus
 from electra_server.apps.elections.models import Election
 from .models import Vote, VoteToken, OfflineVoteQueue, VoteAuditLog
 from .serializers import (
@@ -416,10 +417,40 @@ class OfflineVoteQueueView(generics.ListCreateAPIView):
             ).select_related("ballot_token__election")
 
     def perform_create(self, serializer):
-        """Create offline vote queue entry with proper user association."""
-        # Note: In a real implementation, you'd need to validate the ballot token
-        # and associate it properly. For now, this is a placeholder.
-        serializer.save()
+        """Create offline vote queue entry with proper validation and user association."""
+        ballot_token_uuid = serializer.validated_data.get('ballot_token')
+        
+        try:
+            # Validate that the ballot token exists and belongs to the user
+            ballot_token = BallotToken.objects.get(
+                token_uuid=ballot_token_uuid,
+                user=self.request.user,
+                status=BallotTokenStatus.ISSUED
+            )
+            
+            # Validate that no offline vote is already queued for this token
+            if OfflineVoteQueue.objects.filter(
+                ballot_token=ballot_token,
+                is_synced=False
+            ).exists():
+                raise ValidationError("Offline vote already queued for this ballot token.")
+            
+            # Save with proper ballot token association
+            serializer.save(ballot_token=ballot_token)
+            
+            # Log the offline vote queuing
+            log_vote_event(
+                user=self.request.user,
+                action=AuditActionType.OFFLINE_VOTE_QUEUED,
+                election_id=ballot_token.election.id,
+                ballot_token_hash=Vote.create_ballot_token_hash(ballot_token),
+                ip_address=self.request.META.get('REMOTE_ADDR'),
+                user_agent=self.request.META.get('HTTP_USER_AGENT', ''),
+                result='success'
+            )
+            
+        except BallotToken.DoesNotExist:
+            raise ValidationError("Invalid or expired ballot token.")
 
 
 class OfflineVoteSubmissionView(views.APIView):

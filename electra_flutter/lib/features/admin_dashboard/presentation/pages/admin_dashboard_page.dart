@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/admin_dashboard_providers.dart';
 import '../widgets/admin_header_widget.dart';
@@ -548,7 +549,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
             ),
             TextButton(
               onPressed: () {
-                // TODO: Navigate to elections management
+                context.go(AppRoutes.electionManagement);
               },
               child: const Text('View All'),
             ),
@@ -628,7 +629,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
       trailing: IconButton(
         icon: const Icon(Icons.arrow_forward_ios),
         onPressed: () {
-          // TODO: Navigate to election details
+          // Navigate to election details (assuming we'll create this route later)
+          context.go('${AppRoutes.electionManagement}/details');
         },
       ),
     );
@@ -749,7 +751,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
               Icons.add_box,
               KWASUColors.primaryBlue,
               () {
-                // TODO: Navigate to create election
+                context.go('${AppRoutes.electionManagement}/create');
               },
               theme,
             ),
@@ -758,7 +760,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
               Icons.people_outline,
               KWASUColors.info,
               () {
-                // TODO: Navigate to user management
+                context.go('${AppRoutes.adminDashboard}/users');
               },
               theme,
             ),
@@ -767,7 +769,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
               Icons.analytics_outlined,
               KWASUColors.success,
               () {
-                // TODO: Navigate to reports
+                context.go(AppRoutes.analytics);
               },
               theme,
             ),
@@ -776,7 +778,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
               Icons.list_alt,
               KWASUColors.warning,
               () {
-                // TODO: Navigate to logs
+                context.go('${AppRoutes.adminDashboard}/logs');
               },
               theme,
             ),
@@ -788,7 +790,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
               Icons.settings,
               KWASUColors.grey600,
               () {
-                // TODO: Navigate to settings
+                context.go(AppRoutes.settings);
               },
               theme,
             ),

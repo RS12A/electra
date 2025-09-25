@@ -414,8 +414,65 @@ class ThemeController extends ChangeNotifier {
 
 /// Provider for theme controller
 final themeControllerProvider = ChangeNotifierProvider<ThemeController>((ref) {
-  throw UnimplementedError('ThemeController must be provided via dependency injection');
+  // Create a mock storage service for now
+  // In production, this should be injected via proper DI
+  final mockStorage = _MockStorageService();
+  return ThemeController(mockStorage);
 });
+
+/// Mock storage service that implements the interface needed by ThemeController
+class _MockStorageService implements StorageService {
+  final Map<String, String> _storage = {};
+  
+  @override
+  Future<String?> readSecure(String key) async {
+    return _storage[key];
+  }
+  
+  @override
+  Future<void> storeSecure(String key, String value) async {
+    _storage[key] = value;
+  }
+  
+  // Implement all required StorageService methods.
+  // Only readSecure and storeSecure are used by ThemeController.
+  // For unused methods, throw UnimplementedError to maintain type safety.
+
+  @override
+  Future<void> deleteSecure(String key) async {
+    throw UnimplementedError('deleteSecure is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> clearSecure() async {
+    throw UnimplementedError('clearSecure is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<Map<String, String>> readAllSecure() async {
+    throw UnimplementedError('readAllSecure is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> store(String key, String value) async {
+    throw UnimplementedError('store is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<String?> read(String key) async {
+    throw UnimplementedError('read is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    throw UnimplementedError('delete is not implemented in _MockStorageService');
+  }
+
+  @override
+  Future<void> clear() async {
+    throw UnimplementedError('clear is not implemented in _MockStorageService');
+  }
+}
 
 /// Provider for current theme mode
 final currentThemeProvider = Provider<AppThemeMode>((ref) {

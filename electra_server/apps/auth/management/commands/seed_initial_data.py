@@ -95,20 +95,17 @@ class Command(BaseCommand):
             
             if force:
                 # Update existing user
-                user.username = username
                 user.is_staff = True
                 user.is_superuser = True
                 user.is_active = True
-                user.email_verified = True
+                user.role = 'admin'
                 user.set_password(password)
                 
                 # Set required fields if missing
-                if not user.first_name:
-                    user.first_name = 'Admin'
-                if not user.last_name:
-                    user.last_name = 'User'
-                if not user.matric_staff_id:
-                    user.matric_staff_id = 'ADMIN001'
+                if not user.full_name:
+                    user.full_name = 'System Administrator'
+                if not user.staff_id:
+                    user.staff_id = 'ADMIN001'
                 
                 user.save()
                 self.stdout.write(f'✓ Updated existing admin user: {user.email}')
@@ -120,16 +117,14 @@ class Command(BaseCommand):
         except User.DoesNotExist:
             # Create new admin user
             user = User.objects.create_user(
-                username=username,
                 email=email,
                 password=password,
-                first_name='Admin',
-                last_name='User',
-                matric_staff_id='ADMIN001',
+                full_name='System Administrator',
+                staff_id='ADMIN001',
+                role='admin',
                 is_staff=True,
                 is_superuser=True,
-                is_active=True,
-                email_verified=True
+                is_active=True
             )
             
             self.stdout.write(f'✓ Created admin user: {user.email}')
@@ -143,17 +138,18 @@ class Command(BaseCommand):
             from electra_server.apps.elections.models import Election
             from datetime import timedelta
             
+            # Get the admin user as creator
+            admin_user = User.objects.get(email='admin@electra.com')
+            
             election, created = Election.objects.get_or_create(
                 title='Sample Student Council Election 2024',
                 defaults={
                     'description': 'This is a sample election for development purposes.',
-                    'start_date': timezone.now() + timedelta(days=7),
-                    'end_date': timezone.now() + timedelta(days=14),
+                    'start_time': timezone.now() + timedelta(days=7),
+                    'end_time': timezone.now() + timedelta(days=14),
                     'status': 'draft',
-                    'eligible_roles': ['student'],
-                    'max_votes_per_user': 1,
-                    'allow_abstention': True,
-                    'voting_instructions': 'Select your preferred candidate from the list below.',
+                    'created_by': admin_user,
+                    'delayed_reveal': False,
                 }
             )
             

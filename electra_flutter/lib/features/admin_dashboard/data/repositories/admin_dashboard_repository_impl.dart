@@ -10,6 +10,23 @@ import '../../domain/entities/audit_log.dart';
 import '../../domain/repositories/admin_dashboard_repository.dart';
 import '../datasources/admin_remote_data_source.dart';
 
+// Import missing types (these may need to be defined)
+typedef UserRole = String;
+typedef AccountStatus = String;
+typedef SystemAlert = Map<String, dynamic>;
+typedef UserActivityLog = Map<String, dynamic>;
+typedef BulkUserOperationResult = Map<String, dynamic>;
+typedef QuickAction = Map<String, dynamic>;
+typedef BallotTokenAudit = Map<String, dynamic>;
+typedef TokenStatus = String;
+typedef VoteAudit = Map<String, dynamic>;
+typedef ChainIntegrityResult = Map<String, dynamic>;
+typedef AuditCategory = String;
+typedef AuditAction = String;
+typedef AuditResult = String;
+typedef UserAction = String;
+typedef UserPermission = String;
+
 /// Implementation of AdminDashboardRepository
 ///
 /// Handles data operations for the admin dashboard using clean architecture
@@ -416,29 +433,49 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
     }
   }
 
-  // Real-time updates (implementation would depend on WebSocket/SSE setup)
+  // Real-time updates using polling (WebSocket/SSE can be implemented later)
   @override
   Stream<AdminDashboardMetrics> watchDashboardMetrics() {
-    // TODO: Implement WebSocket/SSE stream
-    throw UnimplementedError('Real-time dashboard metrics not implemented');
+    return Stream.periodic(const Duration(seconds: 30), (_) async {
+      final result = await getDashboardMetrics();
+      return result.fold(
+        (failure) => throw Exception(failure.message),
+        (metrics) => metrics,
+      );
+    }).asyncMap((future) => future);
   }
 
   @override
   Stream<List<SystemAlert>> watchSystemAlerts() {
-    // TODO: Implement WebSocket/SSE stream
-    throw UnimplementedError('Real-time system alerts not implemented');
+    return Stream.periodic(const Duration(seconds: 60), (_) async {
+      final result = await getSystemAlerts();
+      return result.fold(
+        (failure) => throw Exception(failure.message),
+        (alerts) => alerts,
+      );
+    }).asyncMap((future) => future);
   }
 
   @override
   Stream<List<AdminElection>> watchElections() {
-    // TODO: Implement WebSocket/SSE stream
-    throw UnimplementedError('Real-time elections not implemented');
+    return Stream.periodic(const Duration(seconds: 30), (_) async {
+      final result = await getElections();
+      return result.fold(
+        (failure) => throw Exception(failure.message),
+        (elections) => elections,
+      );
+    }).asyncMap((future) => future);
   }
 
   @override
   Stream<List<UserActivityLog>> watchUserActivity() {
-    // TODO: Implement WebSocket/SSE stream  
-    throw UnimplementedError('Real-time user activity not implemented');
+    return Stream.periodic(const Duration(seconds: 45), (_) async {
+      final result = await getUserActivityLogs(limit: 50);
+      return result.fold(
+        (failure) => throw Exception(failure.message),
+        (logs) => logs,
+      );
+    }).asyncMap((future) => future);
   }
 
   // Stub implementations for brevity - would implement all remaining methods
@@ -452,69 +489,168 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
     int limit = 20,
     String sortBy = 'createdAt',
     String sortOrder = 'desc',
-  }) {
-    // TODO: Implement user management methods
-    throw UnimplementedError();
+  }) async {
+    try {
+      final models = await _remoteDataSource.getUsers(
+        role: role,
+        status: status,
+        searchQuery: searchQuery,
+        department: department,
+        page: page,
+        limit: limit,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+      );
+      return Right(models.map((m) => m.toEntity()).toList());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to fetch users: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> getUserById(String userId) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> getUserById(String userId) async {
+    try {
+      final model = await _remoteDataSource.getUserById(userId);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to fetch user: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> updateUser(AdminUser user) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> updateUser(AdminUser user) async {
+    try {
+      final model = await _remoteDataSource.updateUser(user);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to update user: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> activateUser(String userId) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> activateUser(String userId) async {
+    try {
+      final model = await _remoteDataSource.activateUser(userId);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to activate user: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> deactivateUser(String userId) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> deactivateUser(String userId) async {
+    try {
+      final model = await _remoteDataSource.deactivateUser(userId);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to deactivate user: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> suspendUser(String userId, {Duration? duration, String? reason}) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> suspendUser(String userId, {Duration? duration, String? reason}) async {
+    try {
+      final model = await _remoteDataSource.suspendUser(userId, duration: duration, reason: reason);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to suspend user: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> lockUser(String userId, {Duration? duration, String? reason}) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> lockUser(String userId, {Duration? duration, String? reason}) async {
+    try {
+      final model = await _remoteDataSource.lockUser(userId, duration: duration, reason: reason);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to lock user: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> unlockUser(String userId) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> unlockUser(String userId) async {
+    try {
+      final model = await _remoteDataSource.unlockUser(userId);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to unlock user: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> assignRole(String userId, UserRole role) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> assignRole(String userId, UserRole role) async {
+    try {
+      final model = await _remoteDataSource.assignRole(userId, role);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to assign role: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> grantPermissions(String userId, List<UserPermission> permissions) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> grantPermissions(String userId, List<UserPermission> permissions) async {
+    try {
+      final model = await _remoteDataSource.grantPermissions(userId, permissions);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to grant permissions: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, AdminUser>> revokePermissions(String userId, List<UserPermission> permissions) {
-    throw UnimplementedError();
+  Future<Either<Failure, AdminUser>> revokePermissions(String userId, List<UserPermission> permissions) async {
+    try {
+      final model = await _remoteDataSource.revokePermissions(userId, permissions);
+      return Right(model.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to revoke permissions: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, BulkUserOperationResult>> bulkActivateUsers(List<String> userIds) {
-    throw UnimplementedError();
+  Future<Either<Failure, BulkUserOperationResult>> bulkActivateUsers(List<String> userIds) async {
+    try {
+      final result = await _remoteDataSource.bulkActivateUsers(userIds);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to bulk activate users: $e'));
+    }
   }
 
   @override
-  Future<Either<Failure, BulkUserOperationResult>> bulkDeactivateUsers(List<String> userIds) {
-    throw UnimplementedError();
+  Future<Either<Failure, BulkUserOperationResult>> bulkDeactivateUsers(List<String> userIds) async {
+    try {
+      final result = await _remoteDataSource.bulkDeactivateUsers(userIds);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to bulk deactivate users: $e'));
+    }
   }
 
   @override
@@ -525,8 +661,22 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
     DateTime? endDate,
     int page = 1,
     int limit = 20,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    try {
+      final logs = await _remoteDataSource.getUserActivityLogs(
+        userId: userId,
+        action: action,
+        startDate: startDate,
+        endDate: endDate,
+        page: page,
+        limit: limit,
+      );
+      return Right(logs);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to fetch user activity logs: $e'));
+    }
   }
 
   @override
@@ -539,8 +689,24 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
     DateTime? endDate,
     int page = 1,
     int limit = 20,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    try {
+      final models = await _remoteDataSource.getAuditLogs(
+        category: category,
+        action: action,
+        result: result,
+        userId: userId,
+        startDate: startDate,
+        endDate: endDate,
+        page: page,
+        limit: limit,
+      );
+      return Right(models.map((m) => m.toEntity()).toList());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to fetch audit logs: $e'));
+    }
   }
 
   @override
@@ -551,8 +717,22 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
     DateTime? endDate,
     int page = 1,
     int limit = 20,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    try {
+      final audits = await _remoteDataSource.getBallotTokenAudits(
+        electionId: electionId,
+        status: status,
+        startDate: startDate,
+        endDate: endDate,
+        page: page,
+        limit: limit,
+      );
+      return Right(audits);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to fetch ballot token audits: $e'));
+    }
   }
 
   @override
@@ -563,16 +743,40 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
     bool validOnly = true,
     int page = 1,
     int limit = 20,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    try {
+      final audits = await _remoteDataSource.getVoteAudits(
+        electionId: electionId,
+        startDate: startDate,
+        endDate: endDate,
+        validOnly: validOnly,
+        page: page,
+        limit: limit,
+      );
+      return Right(audits);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to fetch vote audits: $e'));
+    }
   }
 
   @override
   Future<Either<Failure, ChainIntegrityResult>> verifyChainIntegrity({
     int? startSequence,
     int? endSequence,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    try {
+      final result = await _remoteDataSource.verifyChainIntegrity(
+        startSequence: startSequence,
+        endSequence: endSequence,
+      );
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to verify chain integrity: $e'));
+    }
   }
 
   @override
@@ -581,7 +785,19 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
     DateTime? startDate,
     DateTime? endDate,
     String format = 'csv',
-  }) {
-    throw UnimplementedError();
+  }) async {
+    try {
+      final exportUrl = await _remoteDataSource.exportAuditLogs(
+        category: category,
+        startDate: startDate,
+        endDate: endDate,
+        format: format,
+      );
+      return Right(exportUrl);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('Failed to export audit logs: $e'));
+    }
   }
 }

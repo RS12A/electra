@@ -29,7 +29,7 @@ urlpatterns = [
     # Dashboard endpoint
     path('dashboard/', AdminDashboardView.as_view(), name='dashboard'),
     
-    # Candidate management (placeholder)
+    # Candidate management
     path('candidates/', AdminCandidateListView.as_view(), name='candidates'),
     
     # Include router URLs
