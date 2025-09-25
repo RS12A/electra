@@ -58,7 +58,7 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 FROM dependencies as production
 
 # Install gunicorn for production
-RUN pip install gunicorn==22.0.0
+RUN pip install gunicorn==21.2.0
 
 # Copy application code
 COPY . .
