@@ -27,8 +27,28 @@ if env_file.exists():
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
+if not SECRET_KEY or SECRET_KEY == 'your_KEY_goes_here':
+    if not env('DEBUG', default=False):
+        raise ValueError("Django secret key must be set for production")
+    print("⚠️  Using default Django secret key for development")
 
 DEBUG = env('DEBUG')
+
+# Environment validation for production
+if not DEBUG and os.getenv('SKIP_ENV_VALIDATION') != 'true':
+    try:
+        from .env_validation import validate_environment, check_key_files
+        
+        # Run comprehensive environment validation
+        is_valid = validate_environment(fail_on_error=False)
+        check_key_files()
+        
+        if not is_valid:
+            print("\n❌ Production environment validation failed!")
+            print("Set SKIP_ENV_VALIDATION=true to bypass (not recommended)")
+            sys.exit(1)
+    except ImportError:
+        print("⚠️  Environment validation module not found - skipping validation")
 
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
@@ -171,31 +191,37 @@ ELECTRA_METRICS_PREFIX = env('ELECTRA_METRICS_PREFIX', default='electra')
 # Sentry configuration for error tracking (optional)
 SENTRY_DSN = env('SENTRY_DSN', default='your_KEY_goes_here')
 if SENTRY_DSN and SENTRY_DSN != 'your_KEY_goes_here':
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-    from sentry_sdk.integrations.logging import LoggingIntegration
-    
-    sentry_logging = LoggingIntegration(
-        level=logging.INFO,        # Capture info and above as breadcrumbs
-        event_level=logging.ERROR  # Send errors as events
-    )
-    
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[
-            DjangoIntegration(
-                transaction_style='url',
-                middleware_spans=True,
-                signals_spans=True,
-                cache_spans=True,
-            ),
-            sentry_logging,
-        ],
-        traces_sample_rate=0.1,  # 10% sampling rate for performance monitoring
-        send_default_pii=False,  # Don't send personally identifiable information
-        environment=env('DJANGO_ENV', default='development'),
-        release=env('RELEASE_VERSION', default='1.0.0'),
-    )
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+        
+        sentry_logging = LoggingIntegration(
+            level=logging.INFO,        # Capture info and above as breadcrumbs
+            event_level=logging.ERROR  # Send errors as events
+        )
+        
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[
+                DjangoIntegration(
+                    transaction_style='url',
+                    middleware_spans=True,
+                    signals_spans=True,
+                    cache_spans=True,
+                ),
+                sentry_logging,
+            ],
+            traces_sample_rate=0.1,  # 10% sampling rate for performance monitoring
+            send_default_pii=False,  # Don't send personally identifiable information
+            environment=env('DJANGO_ENV', default='development'),
+            release=env('RELEASE_VERSION', default='1.0.0'),
+        )
+        print("✅ Sentry error tracking initialized")
+    except ImportError:
+        print("⚠️  Sentry SDK not installed - error tracking disabled")
+else:
+    print("⚠️  Sentry DSN not configured - error tracking disabled")
 
 # Django REST Framework
 REST_FRAMEWORK = {

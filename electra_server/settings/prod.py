@@ -9,6 +9,8 @@ DEBUG = False
 
 # Production allowed hosts - must be set via environment
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS')
+if not ALLOWED_HOSTS:
+    raise ValueError("DJANGO_ALLOWED_HOSTS must be set for production")
 
 # Security settings for production
 SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=True)
@@ -44,18 +46,39 @@ DATABASES = {
 if DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
     raise ValueError('Production must use PostgreSQL database')
 
+# Validate database URL format
+database_url = env('DATABASE_URL', default='')
+if not database_url or database_url == 'your_KEY_goes_here':
+    raise ValueError('DATABASE_URL must be set for production')
+
 # Email configuration for production
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Validate email configuration
+email_host = env('EMAIL_HOST', default='')
+email_user = env('EMAIL_HOST_USER', default='')
+email_password = env('EMAIL_HOST_PASSWORD', default='')
+
+if not email_host or email_host == 'your_KEY_goes_here':
+    raise ValueError('EMAIL_HOST must be set for production')
+if not email_user or email_user == 'your_KEY_goes_here':
+    raise ValueError('EMAIL_HOST_USER must be set for production')
+if not email_password or email_password == 'your_KEY_goes_here':
+    raise ValueError('EMAIL_HOST_PASSWORD must be set for production')
 
 # Production logging - JSON format
 LOGGING['handlers']['console']['formatter'] = 'json'
 LOGGING['handlers']['file']['level'] = 'WARNING'  # Only warnings and errors to file
 
 # Cache configuration - must use Redis in production
+redis_url = env('REDIS_URL', default='')
+if not redis_url or redis_url == 'your_KEY_goes_here':
+    raise ValueError('REDIS_URL must be set for production caching')
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': env('REDIS_URL'),
+        'LOCATION': redis_url,
         'OPTIONS': {
             'CONNECTION_POOL_KWARGS': {
                 'max_connections': 20,
@@ -82,8 +105,28 @@ DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 ADMIN_URL = env('ADMIN_URL', default='admin/')
 
 # JWT settings for production - require RSA keys
-if not SIMPLE_JWT.get('SIGNING_KEY') or not SIMPLE_JWT.get('VERIFYING_KEY'):
-    raise ValueError('RSA keys must be configured for JWT in production')
+rsa_private_key_path = env('RSA_PRIVATE_KEY_PATH', default='')
+rsa_public_key_path = env('RSA_PUBLIC_KEY_PATH', default='')
+
+if not rsa_private_key_path or not rsa_public_key_path:
+    raise ValueError('RSA key paths must be set for production JWT signing')
+
+if not os.path.exists(rsa_private_key_path):
+    raise ValueError(f'RSA private key file not found: {rsa_private_key_path}')
+
+if not os.path.exists(rsa_public_key_path):
+    raise ValueError(f'RSA public key file not found: {rsa_public_key_path}')
+
+# Load RSA keys for JWT
+try:
+    with open(rsa_private_key_path, 'r') as f:
+        SIMPLE_JWT['SIGNING_KEY'] = f.read()
+    with open(rsa_public_key_path, 'r') as f:
+        SIMPLE_JWT['VERIFYING_KEY'] = f.read()
+    SIMPLE_JWT['ALGORITHM'] = 'RS256'
+    print("✅ RSA keys loaded successfully for JWT signing")
+except Exception as e:
+    raise ValueError(f'Failed to load RSA keys: {e}')
 
 # Additional security middleware for production
 MIDDLEWARE.insert(0, 'django.middleware.security.SecurityMiddleware')
@@ -98,3 +141,35 @@ DATABASES['default']['OPTIONS'] = {
     'MAX_CONNS': 20,
     'MIN_CONNS': 5,
 }
+
+# Sentry configuration for error tracking
+sentry_dsn = env('SENTRY_DSN', default='')
+if sentry_dsn and sentry_dsn != 'your_KEY_goes_here':
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+        
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            integrations=[
+                DjangoIntegration(
+                    transaction_style='url',
+                    middleware_spans=True,
+                    signals_spans=False,
+                ),
+                LoggingIntegration(
+                    level=logging.INFO,
+                    event_level=logging.ERROR
+                ),
+            ],
+            traces_sample_rate=0.1,
+            send_default_pii=False,
+            environment=env('SENTRY_ENVIRONMENT', default='production'),
+            release=env('RELEASE_VERSION', default='1.0.0'),
+        )
+        print("✅ Sentry error tracking initialized")
+    except ImportError:
+        print("⚠️  Sentry SDK not installed - error tracking disabled")
+else:
+    print("⚠️  Sentry DSN not configured - error tracking disabled")

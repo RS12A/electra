@@ -1,11 +1,15 @@
+import '../../core/config/app_config.dart';
+
 /// Application constants and configuration values
+/// Now uses environment-aware configuration from AppConfig
 class AppConstants {
   // Private constructor to prevent instantiation
   AppConstants._();
 
-  // API Configuration
-  static const String baseUrl = 'http://your_server_url_goes_here:8000';
-  static const String apiVersion = 'v1';
+  // API Configuration (now environment-aware)
+  static String get baseUrl => AppConfig.baseUrl;
+  static String get apiVersion => AppConfig.apiVersion;
+  static String get wsBaseUrl => AppConfig.wsBaseUrl;
 
   // Endpoints
   static const String authEndpoint = '/api/auth';
@@ -70,11 +74,11 @@ class AppConstants {
   static const Duration toastDuration = Duration(seconds: 3);
   static const Duration splashDelay = Duration(seconds: 2);
 
-  // University Information
-  static const String universityName = 'Kwara State University';
-  static const String universityAbbr = 'KWASU';
-  static const String supportEmail = 'electoral@kwasu.edu.ng';
-  static const String supportPhone = '+234-XXX-XXX-XXXX';
+  // University Information (now environment-aware)
+  static String get universityName => AppConfig.universityName;
+  static String get universityAbbr => AppConfig.universityAbbr;
+  static String get supportEmail => AppConfig.supportEmail;
+  static String get supportPhone => AppConfig.supportPhone;
 
   // App Information
   static const String appName = 'Electra';
@@ -82,20 +86,50 @@ class AppConstants {
   static const String appVersion = '1.0.0';
   static const String buildNumber = '1';
 
-  // Legal
-  static const String privacyPolicyUrl = 'https://electra.kwasu.edu.ng/privacy';
-  static const String termsOfServiceUrl = 'https://electra.kwasu.edu.ng/terms';
+  // Legal URLs (should be configurable per deployment)
+  static String get privacyPolicyUrl => 'https://electra.${AppConfig.universityAbbr.toLowerCase()}.edu.ng/privacy';
+  static String get termsOfServiceUrl => 'https://electra.${AppConfig.universityAbbr.toLowerCase()}.edu.ng/terms';
 
-  // Feature Flags
-  static const bool enableBiometrics = true;
-  static const bool enableOfflineVoting = true;
-  static const bool enableAnalytics = true;
-  static const bool enableNotifications = true;
-  static const bool enableDarkMode = true;
+  // Feature Flags (now environment-aware)
+  static bool get enableBiometrics => AppConfig.enableBiometrics;
+  static bool get enableOfflineVoting => AppConfig.enableOfflineVoting;
+  static bool get enableAnalytics => AppConfig.enableAnalytics;
+  static bool get enableNotifications => AppConfig.enableNotifications;
+  static bool get enableDarkMode => AppConfig.enableDarkMode;
 
   // Security
   static const Duration sessionTimeout = Duration(hours: 1);
   static const Duration tokenRefreshThreshold = Duration(minutes: 5);
   static const int maxLoginAttempts = 5;
   static const Duration lockoutDuration = Duration(minutes: 15);
+
+  // Development and Debug
+  static bool get developmentMode => AppConfig.developmentMode;
+  static bool get debugMode => AppConfig.debugMode;
+
+  // Firebase Configuration (now environment-aware)
+  static String get firebaseProjectId => AppConfig.firebaseProjectId;
+  static String get firebaseApiKey => AppConfig.firebaseApiKey;
+  static String get firebaseAuthDomain => AppConfig.firebaseAuthDomain;
+  static String get firebaseStorageBucket => AppConfig.firebaseStorageBucket;
+  static String get fcmSenderId => AppConfig.fcmSenderId;
+  static String get firebaseAppId => AppConfig.firebaseAppId;
+  static String get firebaseMeasurementId => AppConfig.firebaseMeasurementId;
+
+  // Analytics Configuration (now environment-aware)
+  static String get googleAnalyticsId => AppConfig.googleAnalyticsId;
+  static String get mixpanelToken => AppConfig.mixpanelToken;
+  static String get amplitudeApiKey => AppConfig.amplitudeApiKey;
+
+  // Helper methods for configuration checks
+  static bool get isFirebaseConfigured => AppConfig.isFirebaseConfigured;
+  static bool get isAnalyticsConfigured => AppConfig.isAnalyticsConfigured;
+  static bool get isPushNotificationsEnabled => AppConfig.isPushNotificationsEnabled;
+
+  /// Print configuration for debugging
+  static void printConfiguration() {
+    if (developmentMode || debugMode) {
+      AppConfig.printConfigSummary();
+    }
+  }
 }
