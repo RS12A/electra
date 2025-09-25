@@ -8,6 +8,8 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'core/storage/storage_service.dart';
+import 'core/config/env_config.dart';
+import 'core/config/app_config.dart';
 import 'shared/utils/logger.dart';
 
 /// Main entry point of the Electra Flutter application
@@ -22,6 +24,9 @@ void main() async {
   AppLogger.info('Starting Electra Flutter App');
 
   try {
+    // Validate environment configuration
+    await _validateEnvironment();
+
     // Initialize local storage
     await _initializeStorage();
 
@@ -277,5 +282,30 @@ class ErrorDisplay extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Validate environment configuration on app startup
+Future<void> _validateEnvironment() async {
+  try {
+    AppLogger.info('Validating environment configuration...');
+    
+    // Print configuration summary in debug mode
+    if (AppConfig.debugMode || AppConfig.developmentMode) {
+      AppConfig.printConfigSummary();
+    }
+    
+    // Run environment validation
+    final isValid = await EnvironmentConfig.validateEnvironment();
+    
+    if (!isValid) {
+      AppLogger.warning('Environment validation found issues - check console output');
+    } else {
+      AppLogger.info('Environment validation completed successfully');
+    }
+  } catch (e, stackTrace) {
+    AppLogger.error('Environment validation failed', e, stackTrace);
+    // Don't crash the app for environment validation failures in Flutter
+    // Just log the error and continue
   }
 }

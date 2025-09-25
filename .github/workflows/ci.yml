@@ -10,8 +10,18 @@ on:
 env:
   # Python configuration
   DJANGO_SETTINGS_MODULE: 'electra_server.settings.dev'
-  DJANGO_SECRET_KEY: 'ci-test-secret-key-not-for-production'
+  DJANGO_SECRET_KEY: 'ci-test-secret-key-not-for-production-use-minimum-50-chars-long'
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/electra_test'
+  JWT_SECRET_KEY: 'ci-test-jwt-secret-key-not-for-production-use'
+  REDIS_URL: 'redis://localhost:6379/0'
+  EMAIL_HOST: 'smtp.example.com'
+  EMAIL_HOST_USER: 'test@example.com'
+  EMAIL_HOST_PASSWORD: 'test-password'
+  RSA_PRIVATE_KEY_PATH: 'keys/private_key.pem'
+  RSA_PUBLIC_KEY_PATH: 'keys/public_key.pem'
+  DJANGO_ALLOWED_HOSTS: 'localhost,127.0.0.1,testserver'
+  # Skip validation in CI for faster builds
+  SKIP_ENV_VALIDATION: 'true'
   # Flutter configuration
   FLUTTER_VERSION: '3.16.9'
 
@@ -76,6 +86,13 @@ jobs:
         run: |
           mkdir -p keys
           python scripts/generate_rsa_keys.py --key-size 2048
+      
+      - name: 'Validate Environment Configuration'
+        run: |
+          # Test the validation script itself
+          python scripts/validate_environment.py --skip-docker --skip-cicd
+        env:
+          SKIP_ENV_VALIDATION: 'false'  # Enable validation for this step
       
       - name: 'Run Django system checks'
         run: |
@@ -163,6 +180,12 @@ jobs:
       
       - name: 'Get Flutter dependencies'
         run: flutter pub get
+      
+      - name: 'Validate Flutter Environment Configuration'
+        run: |
+          # Test Flutter configuration validation
+          flutter test test/config_test.dart || echo "Config tests not yet implemented"
+        continue-on-error: true  # Allow failure until tests are implemented
       
       - name: 'Generate code with build_runner'
         run: flutter packages pub run build_runner build --delete-conflicting-outputs

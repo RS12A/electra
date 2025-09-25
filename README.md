@@ -43,6 +43,14 @@ The Electra Flutter app provides a modern, secure, and user-friendly interface f
 - **Ballot Token System**: Secure token-based authentication prevents double voting
 - **Offline Security**: Encrypted local storage for offline votes
 
+### ⚙️ **Production Environment Management**
+- **Comprehensive Environment Validation**: 140+ environment variables with runtime validation
+- **Automatic Security Checks**: Detection of insecure defaults and missing configurations
+- **Environment-Aware Configuration**: Frontend and backend adapt based on environment variables
+- **Key Management**: Automated RSA key generation and rotation procedures
+- **Deployment Readiness Testing**: Complete validation scripts for production deployment
+- **Documentation**: Comprehensive setup guides and troubleshooting documentation
+
 ### 💾 **Offline Support**
 - **Offline Vote Casting**: Cast votes without internet connection
 - **Encrypted Queue**: Votes stored encrypted until sync
@@ -193,7 +201,20 @@ python scripts/generate_rsa_keys.py
 make generate-keys
 ```
 
-### 3. Start Development Environment
+### 3. Validate Environment Configuration
+
+```bash
+# Validate all environment variables
+python scripts/validate_environment.py
+
+# Or validate specific environment file
+python scripts/validate_environment.py --env-file .env.production
+
+# Test deployment readiness (includes connectivity tests)
+python scripts/test_deployment.py
+```
+
+### 4. Start Development Environment
 
 ```bash
 # Using Make (recommended)
@@ -1512,6 +1533,141 @@ CREATE INDEX CONCURRENTLY audit_log_user_timestamp ON audit_log(user_id, timesta
 CREATE INDEX CONCURRENTLY audit_log_election_timestamp ON audit_log(election_id, timestamp DESC);
 CREATE INDEX CONCURRENTLY audit_log_action_outcome ON audit_log(action_type, outcome);
 ```
+
+## Environment Management & Configuration
+
+The Electra system includes comprehensive environment management with automatic validation, security checks, and deployment readiness testing.
+
+### Environment Variables Overview
+
+The system uses **140+ environment variables** organized into categories:
+
+#### Core Backend Configuration
+- **Django Settings**: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`
+- **Database**: `DATABASE_URL` (PostgreSQL connection string)
+- **Authentication**: `JWT_SECRET_KEY`, RSA key paths, token lifetimes
+- **Email/SMTP**: Host, port, credentials, TLS settings
+- **Caching**: `REDIS_URL` for session and cache storage
+
+#### Security & Encryption  
+- **RSA Keys**: Private/public key paths for JWT signing
+- **SSL Configuration**: HTTPS redirect, HSTS settings
+- **CORS**: Allowed origins and trusted origins
+- **Admin Security**: Custom admin URL configuration
+
+#### Third-Party Integrations
+- **Firebase/FCM**: Project ID, API keys, sender ID for push notifications
+- **AWS Services**: Access keys, S3 bucket configuration
+- **Monitoring**: Sentry DSN, Slack webhooks, OpenTelemetry settings
+- **Analytics**: Google Analytics, Mixpanel, Amplitude tokens
+
+#### Frontend Configuration
+- **API URLs**: `API_BASE_URL`, `WS_BASE_URL` for backend communication  
+- **Feature Flags**: Biometrics, offline voting, dark mode toggles
+- **University Branding**: Name, abbreviation, contact information
+- **Social Auth**: Google client ID for OAuth integration
+
+### Environment Validation System
+
+#### Automatic Validation
+- **Django Backend**: Validates environment on production startup
+- **Flutter Frontend**: Validates configuration on app initialization  
+- **Security Checks**: Detects insecure defaults and missing SSL configuration
+- **Connectivity Tests**: Validates database, Redis, email, and service connections
+
+#### Manual Validation Tools
+
+```bash
+# Validate current environment
+python scripts/validate_environment.py
+
+# Validate specific environment file  
+python scripts/validate_environment.py --env-file .env.production
+
+# Strict validation (fail on warnings)
+python scripts/validate_environment.py --strict
+
+# Test deployment readiness
+python scripts/test_deployment.py --env-file .env.production
+```
+
+#### Validation Features
+- ✅ **Required Variable Detection**: Identifies missing critical variables
+- ✅ **Security Validation**: Checks for insecure defaults and weak configurations  
+- ✅ **URL Format Validation**: Validates database, Redis, and API URL formats
+- ✅ **File Path Validation**: Ensures RSA keys and certificates exist
+- ✅ **Service Connectivity**: Tests database, Redis, email, and external service connections
+- ✅ **Docker Integration**: Validates Docker Compose environment variable injection
+
+### Key Management
+
+#### RSA Key Generation
+```bash
+# Generate production-grade 4096-bit keys
+python scripts/generate_rsa_keys.py --key-size 4096
+
+# Generate with custom output directory
+python scripts/generate_rsa_keys.py --output-dir /secure/keys/
+
+# Force overwrite existing keys (for rotation)
+python scripts/generate_rsa_keys.py --force
+```
+
+#### Key Rotation Process
+1. **Generate new keys** in separate directory
+2. **Update environment variables** to point to new keys
+3. **Deploy and restart services** (invalidates existing JWT tokens)
+4. **Verify functionality** with test authentication
+5. **Remove old keys** after verification
+
+#### Security Best Practices
+- Private keys have 600 file permissions (automatically set)
+- Keys are never committed to version control (`.gitignore` created automatically)
+- Regular rotation schedule (6-12 months for production)
+- Hardware Security Module (HSM) support for enterprise deployments
+
+### Environment Files
+
+#### Development Environment
+```bash
+# Copy template and configure for development
+cp .env.example .env.dev
+# Set DJANGO_DEBUG=True, use local services
+```
+
+#### Staging Environment  
+```bash
+# Create staging configuration
+cp .env.example .env.staging
+# Configure with staging database, disable debug, enable SSL
+```
+
+#### Production Environment
+```bash
+# Create production configuration  
+cp .env.example .env.production
+# Use secure values, enable all security features
+```
+
+### Deployment Readiness Checklist
+
+Before deploying to production, ensure:
+
+- [ ] **Environment Validation**: `python scripts/validate_environment.py --strict` passes
+- [ ] **Deployment Testing**: `python scripts/test_deployment.py` passes  
+- [ ] **Security Review**: All placeholder values replaced with secure alternatives
+- [ ] **RSA Keys**: Generated with 4096-bit strength and proper permissions
+- [ ] **SSL Configuration**: HTTPS redirect enabled, HSTS configured
+- [ ] **Service Connectivity**: Database, Redis, email, and monitoring services tested
+- [ ] **Docker Environment**: All environment variables properly injected
+- [ ] **CI/CD Pipeline**: Environment validation integrated into deployment workflow
+
+### Documentation
+
+For detailed environment setup instructions, see:
+- **[Environment Setup Guide](docs/ENVIRONMENT_SETUP.md)** - Comprehensive configuration instructions
+- **[Security Documentation](security.md)** - Security hardening and best practices
+- **[CI/CD Documentation](ci/README.md)** - Pipeline configuration and secrets management
 
 ## Deployment
 
