@@ -217,8 +217,8 @@ class BallotToken(models.Model):
             'token_uuid': str(self.token_uuid),
             'user_id': str(self.user.id),
             'election_id': str(self.election.id),
-            'issued_at': self.issued_at.isoformat(),
-            'expires_at': self.expires_at.isoformat(),
+            'issued_at': self.issued_at.isoformat() if self.issued_at else timezone.now().isoformat(),
+            'expires_at': self.expires_at.isoformat() if self.expires_at else '',
         }
     
     def create_signature(self) -> str:
