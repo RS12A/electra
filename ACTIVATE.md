@@ -1068,8 +1068,6 @@ Write-Host "`nFor validation, run 'validate_setup.bat'" -ForegroundColor Yellow
 
 ## Part 11: Offline Development
 
-## Part 11: Offline Development
-
 ### Step 11.1: Prepare for Offline Development
 
 1. **Cache Python Dependencies**
