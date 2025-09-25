@@ -1,0 +1,1168 @@
+{
+  "audit_timestamp": "1758809529.8175478",
+  "summary": {
+    "high_severity_vulnerabilities": 0,
+    "medium_severity_vulnerabilities": 3,
+    "low_severity_vulnerabilities": 0,
+    "warnings": 223,
+    "security_score": 0
+  },
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "message": "DEBUG mode enabled",
+      "file": "/home/runner/work/electra/electra/scripts/security_audit.py",
+      "category": "security"
+    },
+    {
+      "severity": "medium",
+      "message": "DEBUG mode enabled",
+      "file": "/home/runner/work/electra/electra/electra_server/settings/test.py",
+      "category": "security"
+    },
+    {
+      "severity": "medium",
+      "message": "DEBUG mode enabled",
+      "file": "/home/runner/work/electra/electra/electra_server/settings/dev.py",
+      "category": "security"
+    }
+  ],
+  "warnings": [
+    {
+      "message": "Environment file has permissive permissions: 664",
+      "file": "/home/runner/work/electra/electra/.env.production.template",
+      "category": "warning"
+    },
+    {
+      "message": "Environment file has permissive permissions: 664",
+      "file": "/home/runner/work/electra/electra/.env.test",
+      "category": "warning"
+    },
+    {
+      "message": "Environment file has permissive permissions: 664",
+      "file": "/home/runner/work/electra/electra/.env.test.complete",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 47",
+      "file": "/home/runner/work/electra/electra/electra_server/audit_logging.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 121",
+      "file": "/home/runner/work/electra/electra/scripts/generate_rsa_keys.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 31",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 51",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 67",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 206",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 219",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 233",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 242",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 307",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 347",
+      "file": "/home/runner/work/electra/electra/tests/test_auth_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 42",
+      "file": "/home/runner/work/electra/electra/tests/test_auth.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 78",
+      "file": "/home/runner/work/electra/electra/tests/test_auth.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 299",
+      "file": "/home/runner/work/electra/electra/tests/test_auth.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 50",
+      "file": "/home/runner/work/electra/electra/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 54",
+      "file": "/home/runner/work/electra/electra/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 56",
+      "file": "/home/runner/work/electra/electra/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 80",
+      "file": "/home/runner/work/electra/electra/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 84",
+      "file": "/home/runner/work/electra/electra/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 86",
+      "file": "/home/runner/work/electra/electra/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 39",
+      "file": "/home/runner/work/electra/electra/tests/test_security_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 64",
+      "file": "/home/runner/work/electra/electra/tests/test_security_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 104",
+      "file": "/home/runner/work/electra/electra/tests/test_security_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 523",
+      "file": "/home/runner/work/electra/electra/tests/test_security_comprehensive.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 319",
+      "file": "/home/runner/work/electra/electra/tests/test_api_integration.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 334",
+      "file": "/home/runner/work/electra/electra/tests/test_api_integration.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 18",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 19",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 38",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 64",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 109",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 114",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 125",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 39",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 40",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 58",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 80",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 125",
+      "file": "/home/runner/work/electra/electra/apps/auth_app/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 72",
+      "file": "/home/runner/work/electra/electra/electra_server/settings/test.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 106",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 107",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 130",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 177",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 178",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 269",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 37",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/urls.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 41",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/urls.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 42",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/urls.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 33",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 36",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 37",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 39",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 41",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 70",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 116",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 120",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 138",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 140",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 157",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 181",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 247",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 270",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 284",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 303",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 348",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 351",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 352",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 354",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 356",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 374",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 375",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 378",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 391",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 410",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 414",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 428",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 430",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 432",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 435",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 436",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 438",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 440",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 477",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 478",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 480",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 494",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 497",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 478",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 530",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 588",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 243",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/admin.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 237",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 238",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 267",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 270",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 271",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 272",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 113",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/managers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 40",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 218",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 284",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 293",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 302",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 485",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 493",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 501",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/tests.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 34",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 399",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/audit/models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 39",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 48",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 57",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 66",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 75",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 172",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 181",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 190",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 199",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 240",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 272",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 45",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 54",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 206",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 300",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 309",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 35",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 45",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 55",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 64",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 74",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 262",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 271",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 288",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 412",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 421",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 448",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 575",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 584",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 642",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/admin/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 48",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/votes/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 131",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/votes/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 84",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/votes/tests/test_serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 388",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/votes/tests/test_serializers.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 90",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/votes/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 265",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/votes/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 511",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/votes/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 29",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 41",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 53",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 65",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 227",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 259",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 295",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 29",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 41",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 60",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 80",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 34",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 42",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 50",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 58",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/ballots/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 161",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 176",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 192",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 201",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 254",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 266",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 277",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 289",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 292",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 304",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 310",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 313",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 316",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 320",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 321",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 322",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 329",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 333",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 384",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 402",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 50",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 104",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/factories.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 88",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 137",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 138",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 158",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 366",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 367",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 388",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 408",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 447",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 466",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 487",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 489",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 39",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 40",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 58",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 80",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 121",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/auth/management/commands/seed_initial_data.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 35",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 44",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 53",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 62",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 71",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_permissions.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 33",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_models.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 41",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_calculations.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 49",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_calculations.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 60",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_calculations.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 72",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_calculations.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 38",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 46",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "Potential hardcoded password on line 54",
+      "file": "/home/runner/work/electra/electra/electra_server/apps/analytics/tests/test_views.py",
+      "category": "warning"
+    },
+    {
+      "message": "SSL redirect is disabled",
+      "file": "/home/runner/work/electra/electra/electra_server/settings/test.py",
+      "category": "warning"
+    },
+    {
+      "message": "SSL redirect is disabled",
+      "file": "/home/runner/work/electra/electra/electra_server/settings/dev.py",
+      "category": "warning"
+    },
+    {
+      "message": "Django SECRET_KEY appears to be too short",
+      "file": "/home/runner/work/electra/electra/electra_server/settings/base.py",
+      "category": "warning"
+    },
+    {
+      "message": "Could not check Python dependencies with safety",
+      "file": "",
+      "category": "warning"
+    },
+    {
+      "message": "Could not check Flutter dependencies",
+      "file": "",
+      "category": "warning"
+    },
+    {
+      "message": "Missing security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Strict-Transport-Security",
+      "file": "/home/runner/work/electra/electra/nginx/nginx.conf",
+      "category": "warning"
+    },
+    {
+      "message": "Missing security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Strict-Transport-Security",
+      "file": "/home/runner/work/electra/electra/monitoring/logstash/logstash.conf",
+      "category": "warning"
+    },
+    {
+      "message": "Missing security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Strict-Transport-Security",
+      "file": "/home/runner/work/electra/electra/nginx/nginx.conf",
+      "category": "warning"
+    }
+  ],
+  "recommendations": [
+    "Run regular security scans using automated tools",
+    "Implement Web Application Firewall (WAF) for production",
+    "Set up intrusion detection system (IDS)",
+    "Enable database query logging for audit trails",
+    "Implement rate limiting on all API endpoints",
+    "Set up automated backup verification",
+    "Configure log monitoring and alerting",
+    "Implement security incident response procedures",
+    "Regular security training for development team",
+    "Periodic penetration testing by third-party security experts",
+    "Schedule regular security audits to catch vulnerabilities early"
+  ],
+  "audit_categories": [
+    "File Permissions",
+    "Secret Exposure",
+    "Django Security",
+    "Dependencies",
+    "Docker Security",
+    "Web Security"
+  ]
+}

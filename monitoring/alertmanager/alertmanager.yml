@@ -1,9 +1,9 @@
 global:
-  smtp_smarthost: 'smtp.gmail.com:587'
-  smtp_from: 'electra-alerts@your-domain.com'
-  smtp_auth_username: 'electra-alerts@your-domain.com'
-  smtp_auth_password: 'your_KEY_goes_here'
-  slack_api_url: 'your_KEY_goes_here'
+  smtp_smarthost: '${SMTP_HOST:-smtp.gmail.com}:${SMTP_PORT:-587}'
+  smtp_from: '${MONITORING_EMAIL_FROM:-electra-alerts@your-domain.com}'
+  smtp_auth_username: '${MONITORING_EMAIL_FROM:-electra-alerts@your-domain.com}'
+  smtp_auth_password: '${MONITORING_EMAIL_PASSWORD:-CONFIGURE_ME}'
+  slack_api_url: '${MONITORING_SLACK_WEBHOOK:-CONFIGURE_ME}'
 
 # Templates for notifications
 templates:
@@ -76,7 +76,7 @@ receivers:
 
   - name: 'critical-alerts'
     slack_configs:
-      - api_url: 'your_KEY_goes_here'
+      - api_url: '${MONITORING_SLACK_WEBHOOK:-CONFIGURE_ME}'
         channel: '#electra-critical'
         title: '🚨 CRITICAL: Electra Alert'
         color: 'danger'
@@ -99,7 +99,7 @@ receivers:
 
   - name: 'security-alerts'
     slack_configs:
-      - api_url: 'your_KEY_goes_here'
+      - api_url: '${MONITORING_SLACK_WEBHOOK:-CONFIGURE_ME}'
         channel: '#electra-security'
         title: '🔒 SECURITY: Electra Alert'
         color: 'warning'
