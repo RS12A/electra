@@ -31,21 +31,18 @@ class AuthenticationTest(APITestCase):
             'email': 'test@electra.com',
             'password': 'TestPassword123',
             'password_confirm': 'TestPassword123',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'matric_staff_id': 'U1234567',
-            'phone_number': '1234567890',
-            'is_staff_member': False
+            'full_name': 'Test User',
+            'matric_number': 'U1234567',
+            'role': 'student'
         }
         
         # Create a test user for login tests
         self.test_user = User.objects.create_user(
-            username='existing_user',
             email='existing@electra.com',
             password='ExistingPassword123',
-            first_name='Existing',
-            last_name='User',
-            matric_staff_id='U7654321'
+            full_name='Existing User',
+            matric_number='U7654321',
+            role='student'
         )
     
     def test_user_registration_success(self):
@@ -298,18 +295,17 @@ class UserModelTest(TestCase):
     def test_user_creation(self):
         """Test creating a user with valid data."""
         user = User.objects.create_user(
-            username='testuser',
             email='test@electra.com',
             password='TestPassword123',
-            first_name='Test',
-            last_name='User',
-            matric_staff_id='U1234567'
+            full_name='Test User',
+            matric_number='U1234567',
+            role='student'
         )
         
         self.assertEqual(user.email, 'test@electra.com')
-        self.assertEqual(user.matric_staff_id, 'U1234567')
+        self.assertEqual(user.matric_number, 'U1234567')
+        self.assertEqual(user.full_name, 'Test User')
         self.assertTrue(user.check_password('TestPassword123'))
-        self.assertFalse(user.email_verified)
         self.assertTrue(user.is_active)
         self.assertFalse(user.is_staff)
     

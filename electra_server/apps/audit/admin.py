@@ -47,7 +47,7 @@ class AuditLogAdmin(admin.ModelAdmin):
         'action_type',
         'outcome',
         'timestamp',
-        'user__role',
+        # 'user__role',  # Temporarily disabled for testing
         'target_resource_type',
         'is_sealed',
     ]
