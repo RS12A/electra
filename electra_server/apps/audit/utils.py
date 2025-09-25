@@ -77,7 +77,7 @@ def log_user_action(
             action_type=action_type,
             action_description=description,
             user=user,
-            ip_address=ip_address,
+            ip_address=ip_address if ip_address else None,
             user_agent=user_agent,
             session_key=session_key,
             election=election,

@@ -247,7 +247,7 @@ class AuditActionTypeSerializer(serializers.Serializer):
     
     def get_category(self, obj) -> str:
         """Determine the category of the action type."""
-        value = obj[0] if isinstance(obj, tuple) else obj
+        value = obj.get('value') if isinstance(obj, dict) else (obj[0] if isinstance(obj, tuple) else obj)
         
         if value.startswith('user_'):
             return 'authentication'
