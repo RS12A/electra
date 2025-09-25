@@ -230,7 +230,9 @@ class TamperProofAuditLogger:
     def _anonymize_voter_id(self, voter_id: str) -> str:
         """Anonymize voter ID for privacy while maintaining uniqueness."""
         # Use SHA-256 hash with salt for anonymization
-        salt = "electra_audit_salt_2024"
+        salt = getattr(settings, "AUDIT_LOG_SALT", None)
+        if not salt:
+            raise ValueError("Audit log salt is not configured. Please set AUDIT_LOG_SALT in your Django settings.")
         return hashlib.sha256(f"{voter_id}{salt}".encode()).hexdigest()[:16]
     
     def _anonymize_ip(self, ip_address: str) -> str:
