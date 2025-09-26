@@ -562,7 +562,7 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
         if result and result.returncode == 0:
             # Check if Redis is in WSL
             result = self._run_command("wsl which redis-server")
-            if result and result.returncode == 0:
+            if result and result.returncode == 0 and result.stdout and result.stdout.strip():
                 self.log_success("Redis found in WSL")
                 # Try to start Redis
                 self._run_command("wsl redis-server --daemonize yes")
