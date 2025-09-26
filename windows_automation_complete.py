@@ -53,6 +53,7 @@ class WindowsElectraAutomationComplete:
         self.disable_flutter = disable_flutter
         self.mode = None  # Will be set to 'debug' or 'production'
         self.env_values = {}
+        self._actual_values = {}  # Store sensitive values separately
         self.setup_log = []
         
     def log(self, message: str, color: str = Colors.WHITE):
@@ -60,7 +61,15 @@ class WindowsElectraAutomationComplete:
         timestamp = self._get_timestamp()
         formatted_message = f"[{timestamp}] {message}"
         print(f"{color}{formatted_message}{Colors.END}")
-        self.setup_log.append(formatted_message)
+        # Only log non-sensitive messages to avoid storing secrets
+        if not self._contains_sensitive_data(message):
+            self.setup_log.append(formatted_message)
+            
+    def _contains_sensitive_data(self, message: str) -> bool:
+        """Check if message contains sensitive data that should not be logged."""
+        sensitive_keywords = ['password', 'secret', 'key', 'token', 'credential']
+        message_lower = message.lower()
+        return any(keyword in message_lower for keyword in sensitive_keywords)
         
     def log_success(self, message: str):
         """Log a success message."""
@@ -190,6 +199,8 @@ class WindowsElectraAutomationComplete:
         jwt_secret = self._generate_secret_key(32)
         admin_password = 'admin123'  # Simple password for debug
         
+        # Note: Environment file must contain actual secrets for application functionality
+        # This is the standard practice for .env files in development environments
         debug_env = f"""# =====================================================
 # ELECTRA DEBUG/TEST ENVIRONMENT - OFFLINE COMPATIBLE
 # Generated automatically by Windows Automation Tool
@@ -278,11 +289,24 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
         with open(env_path, 'w') as f:
             f.write(debug_env)
             
+        # Set file permissions to be more restrictive (owner read/write only)
+        try:
+            import stat
+            env_path.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        except:
+            pass  # Permissions may not be supported on all Windows systems
+            
         self.log_success(f"Debug environment file created: {env_path}")
+        self.log_info("Environment file contains sensitive data - keep secure and do not commit to version control")
         self.env_values = {
             'admin_username': 'admin',
-            'admin_password': admin_password,
+            'admin_password': '[HIDDEN]',  # Don't store actual password
             'admin_email': 'admin@electra.local',
+            'database_url': 'postgresql://electra_user:[HIDDEN]@localhost:5432/electra_db'
+        }
+        # Store actual values separately for internal use only
+        self._actual_values = {
+            'admin_password': admin_password,
             'database_url': 'postgresql://electra_user:electra_dev_password@localhost:5432/electra_db'
         }
         
@@ -325,6 +349,8 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
             admin_password = "admin123"
         
         # Generate basic production environment
+        # Note: Environment file must contain actual secrets for application functionality
+        # This is the standard practice for .env files in production environments
         production_env = f"""# =====================================================
 # ELECTRA PRODUCTION ENVIRONMENT
 # Generated automatically by Windows Automation Tool
@@ -409,11 +435,24 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
         with open(env_path, 'w') as f:
             f.write(production_env)
             
+        # Set file permissions to be more restrictive (owner read/write only)
+        try:
+            import stat
+            env_path.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        except:
+            pass  # Permissions may not be supported on all Windows systems
+            
         self.log_success(f"Production environment file created: {env_path}")
+        self.log_info("Environment file contains sensitive data - keep secure and do not commit to version control")
         self.env_values = {
             'admin_username': admin_username,
-            'admin_password': admin_password,
+            'admin_password': '[HIDDEN]',  # Don't store actual password
             'admin_email': admin_email,
+            'database_url': f'postgresql://{db_user}:[HIDDEN]@{db_host}:{db_port}/{db_name}'
+        }
+        # Store actual values separately for internal use only
+        self._actual_values = {
+            'admin_password': admin_password,
             'database_url': database_url
         }
         
@@ -482,7 +521,7 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
             return False
             
         # Extract database info from DATABASE_URL
-        database_url = self.env_values.get('database_url', '')
+        database_url = self._actual_values.get('database_url', self.env_values.get('database_url', ''))
         if not database_url:
             self.log_error("No database URL found in environment")
             return False
@@ -659,7 +698,7 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
         self.log_info("Creating Django superuser...")
         
         admin_username = self.env_values.get('admin_username', 'admin')
-        admin_password = self.env_values.get('admin_password', 'admin123')
+        admin_password = self._actual_values.get('admin_password', self.env_values.get('admin_password', 'admin123'))
         admin_email = self.env_values.get('admin_email', 'admin@electra.local')
         
         # Set environment for createsuperuser
@@ -798,7 +837,7 @@ echo Starting Django development server...
 echo Backend will be available at: http://localhost:8000
 echo Admin panel: http://localhost:8000/admin/
 echo Username: {self.env_values.get('admin_username', 'admin')}
-echo Password: {self.env_values.get('admin_password', 'admin123')}
+echo Password: [HIDDEN - Check WINDOWS_ACTIVATE.md for details]
 echo.
 python manage.py runserver 0.0.0.0:8000
 pause
@@ -864,7 +903,7 @@ pause
 2. Open http://localhost:8000/admin/ in your browser
 3. Login with:
    - Username: `{self.env_values.get('admin_username', 'admin')}`
-   - Password: `{self.env_values.get('admin_password', 'admin123')}`
+   - Password: `{self._actual_values.get('admin_password', 'admin123')}`
 
 ### Frontend Activation (if enabled)
 1. Double-click `start_frontend.bat` to start the Flutter web app
@@ -1016,7 +1055,7 @@ Mode: {mode_info} | Flutter: {flutter_info}
 
 {Colors.GREEN}Admin Credentials:{Colors.END}
 - Username: {self.env_values.get('admin_username', 'admin')}
-- Password: {self.env_values.get('admin_password', 'admin123')}
+- Password: [HIDDEN - See WINDOWS_ACTIVATE.md]
 
 {Colors.GREEN}Documentation:{Colors.END}
 - Detailed guide: WINDOWS_ACTIVATE.md
