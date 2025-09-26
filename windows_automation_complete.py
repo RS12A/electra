@@ -543,10 +543,8 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
         
         # Create database and user commands
         commands = [
-            f'psql -U postgres -h {db_host} -p {db_port} -c "CREATE DATABASE IF NOT EXISTS {db_name};" 2>/dev/null || echo "Database may already exist"',
-            f'psql -U postgres -h {db_host} -p {db_port} -c "CREATE USER {db_user} WITH PASSWORD \'{db_password}\';" 2>/dev/null || echo "User may already exist"',
-            f'psql -U postgres -h {db_host} -p {db_port} -c "GRANT ALL PRIVILEGES ON DATABASE {db_name} TO {db_user};" 2>/dev/null || echo "Privileges granted"'
-        ]
+            # Check if database exists, create if not
+            f'''psql -U postgres -h {db_host} -p {db_port} -tc "SELECT 1 FROM pg_database WHERE datname = '{db_name}';" | grep -q 1 || \
         
         for cmd in commands:
             result = self._run_command(cmd)
