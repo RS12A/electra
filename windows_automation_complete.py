@@ -811,6 +811,10 @@ PROMETHEUS_EXPORT_MIGRATIONS=False
         
         # Run environment validation
         self.log_info("Running environment validation...")
+        validate_script = self.project_root / "scripts" / "validate_environment.py"
+        if not validate_script.exists():
+            self.log_warning(f"Environment validation script not found: {validate_script}")
+            return False
         result = self._run_command(f'"{python_path}" scripts/validate_environment.py --skip-docker', cwd=str(self.project_root))
         
         if result and result.returncode != 0:
