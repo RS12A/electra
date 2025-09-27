@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/health/', include('apps.health.urls')),
+    path('api/health/', include('electra_server.apps.health.urls')),
     path('api/auth/', include('electra_server.apps.auth.urls')),
     path('api/elections/', include('electra_server.apps.elections.urls')),
     path('api/ballots/', include('electra_server.apps.ballots.urls')),

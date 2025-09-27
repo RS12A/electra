@@ -78,7 +78,7 @@ LOCAL_APPS = [
     'electra_server.apps.audit',
     'electra_server.apps.admin',
     'electra_server.apps.analytics',
-    'apps.health',
+    'electra_server.apps.health',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
