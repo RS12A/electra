@@ -712,7 +712,7 @@ try:
     else:
         print("Superuser already exists")
 except Exception as e:
-    print(f"Error creating superuser: {{e}}")
+    print(f"Error creating superuser: {e}")
 '''
         
         result = self._run_command(f'"{venv_python}" manage.py shell', 
