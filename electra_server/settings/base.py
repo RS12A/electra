@@ -121,13 +121,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'electra_server.wsgi.application'
 
-# Database
+# Database - PostgreSQL Only
+# SQLite is completely prohibited in this project
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db(default='postgresql://postgres:postgres@localhost:5432/electra_db')
 }
+
+# Enforce PostgreSQL usage - no SQLite allowed
+if DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
+    raise ValueError(
+        'Only PostgreSQL is allowed as the database backend. '
+        'SQLite usage is prohibited throughout the project. '
+        'Please set DATABASE_URL with a PostgreSQL connection string.'
+    )
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -384,27 +390,31 @@ LOGGING = {
 # Ensure logs directory exists
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 
-# Cache configuration (Redis)
+# Cache configuration - Redis Only
+# Local memory cache is prohibited in this project
+redis_url = env('REDIS_URL', default='redis://localhost:6379/0')
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': redis_url,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 20,
+                'retry_on_timeout': True,
+            },
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            'SERIALIZER': 'django_redis.serializers.json.JSONSerializer',
+            'IGNORE_EXCEPTIONS': True,  # Don't fail silently in production
+        },
+        'KEY_PREFIX': 'electra',
+        'VERSION': 1,
     }
 }
 
-# Override with Redis if available in production
-try:
-    import redis
-    redis_url = env('REDIS_URL', default=None)
-    if redis_url and not ('test' in sys.argv):
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-                'LOCATION': redis_url,
-            }
-        }
-except ImportError:
-    pass
+# Session backend - use Redis for session storage
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
 
 # Custom user model
 AUTH_USER_MODEL = 'electra_auth.User'
