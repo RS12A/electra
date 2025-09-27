@@ -207,25 +207,27 @@ class SchemaOperationsTestCase(TestCase):
     
     def test_audit_log_operations(self):
         """Test audit log functionality."""
+        from electra_server.apps.audit.models import AuditActionType
+        
         # Create an audit log entry
         audit_entry = AuditLog.objects.create(
-            action_type='USER_LOGIN',
+            action_type=AuditActionType.USER_LOGIN,
             action_description='User logged in successfully',
             user_identifier='test@electra.test',
             ip_address='127.0.0.1',
-            outcome='SUCCESS'
+            outcome='success'
         )
         
         # Verify audit log was created
-        self.assertEqual(audit_entry.action_type, 'USER_LOGIN')
-        self.assertEqual(audit_entry.outcome, 'SUCCESS')
+        self.assertEqual(audit_entry.action_type, AuditActionType.USER_LOGIN)
+        self.assertEqual(audit_entry.outcome, 'success')
         
         # Test audit log retrieval
         retrieved_entry = AuditLog.objects.get(id=audit_entry.id)
         self.assertEqual(retrieved_entry.action_type, audit_entry.action_type)
         
         # Test audit log filtering
-        success_logs = AuditLog.objects.filter(outcome='SUCCESS')
+        success_logs = AuditLog.objects.filter(outcome='success')
         self.assertEqual(success_logs.count(), 1)
 
 
