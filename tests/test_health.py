@@ -44,7 +44,7 @@ class HealthCheckTest(APITestCase):
         response = self.client.get(self.health_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
-    @patch('apps.health.views._check_database')
+    @patch('electra_server.apps.health.views._check_database')
     def test_health_check_database_failure(self, mock_db_check):
         """Test health check when database is down."""
         mock_db_check.return_value = {
@@ -60,7 +60,7 @@ class HealthCheckTest(APITestCase):
         self.assertEqual(data['status'], 'degraded')
         self.assertEqual(data['services']['database']['status'], 'unhealthy')
     
-    @patch('apps.health.views._check_cache')
+    @patch('electra_server.apps.health.views._check_cache')
     def test_health_check_cache_failure(self, mock_cache_check):
         """Test health check when cache is down."""
         mock_cache_check.return_value = {
@@ -110,7 +110,7 @@ class HealthCheckIntegrationTest(TransactionTestCase):
     
     def test_database_connectivity(self):
         """Test actual database connectivity."""
-        from apps.health.views import _check_database
+        from electra_server.apps.health.views import _check_database
         
         result = _check_database()
         self.assertEqual(result['status'], 'healthy')
@@ -118,7 +118,7 @@ class HealthCheckIntegrationTest(TransactionTestCase):
     
     def test_cache_connectivity(self):
         """Test actual cache connectivity."""
-        from apps.health.views import _check_cache
+        from electra_server.apps.health.views import _check_cache
         
         result = _check_cache()
         self.assertEqual(result['status'], 'healthy')
