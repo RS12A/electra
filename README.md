@@ -104,6 +104,243 @@ The Electra Flutter app provides a modern, secure, and user-friendly interface f
 
 ## 🖥️ **Django Backend**
 
+### 🔧 **Migration & Schema Management**
+
+The Electra backend uses a comprehensive migration management system to ensure database schema integrity across all environments. All database operations use **PostgreSQL only** - SQLite is completely prohibited.
+
+#### **Quick Migration Commands**
+
+```bash
+# Generate migrations for all apps
+python manage.py makemigrations
+
+# Apply all migrations
+python manage.py migrate
+
+# Verify database schema integrity
+python manage.py verify_schema
+
+# Create superuser (requires staff_id for admin users)
+python manage.py createsuperuser
+```
+
+#### **Migration Verification Tools**
+
+**🔍 Schema Verification Command**
+```bash
+# Basic schema verification
+python manage.py verify_schema
+
+# Verbose output with detailed checks
+python manage.py verify_schema --verbose
+
+# Auto-fix missing migrations
+python manage.py verify_schema --fix-missing
+```
+
+The `verify_schema` command performs comprehensive checks:
+- ✅ Database connection validation
+- ✅ Critical table existence verification
+- ✅ Custom user model configuration
+- ✅ Model-to-database schema consistency
+- ✅ Unmigrated changes detection
+- ✅ Basic database operations testing
+
+**🔧 Windows Migration Fixer Script**
+```bash
+# Run complete migration fix (Windows)
+python scripts/fix_migrations_windows.py
+
+# Verbose output
+python scripts/fix_migrations_windows.py --verbose
+
+# Dry run (show what would be done without changes)
+python scripts/fix_migrations_windows.py --dry-run
+```
+
+The migration fixer automatically:
+- Creates missing migration directories
+- Runs `makemigrations` for all apps
+- Applies all migrations with `migrate`
+- Verifies all critical tables exist
+- Runs comprehensive schema verification
+- Provides detailed success/failure reporting
+
+**🔧 Windows PowerShell Automation**
+```powershell
+# Complete backend verification (Windows PowerShell)
+.\scripts\verify_backend.ps1
+
+# With verbose output
+.\scripts\verify_backend.ps1 -Verbose
+
+# Skip test suite
+.\scripts\verify_backend.ps1 -SkipTests
+
+# Dry run mode
+.\scripts\verify_backend.ps1 -DryRun
+```
+
+The PowerShell script performs end-to-end verification:
+1. **Virtual Environment**: Checks Python environment activation
+2. **Dependencies**: Validates required packages are installed
+3. **Database Connection**: Tests PostgreSQL connectivity
+4. **Migration Fixer**: Runs the migration automation script
+5. **Schema Verification**: Executes schema integrity checks
+6. **Test Suite**: Runs the complete test suite (optional)
+
+#### **Schema Health Testing**
+
+Comprehensive schema health tests ensure database integrity:
+
+```bash
+# Run schema health tests
+python manage.py test tests.test_schema_health
+
+# Run with verbose output
+python manage.py test tests.test_schema_health -v 2
+
+# Run specific test categories
+python manage.py test tests.test_schema_health.SchemaHealthTestCase
+python manage.py test tests.test_schema_health.SchemaOperationsTestCase
+python manage.py test tests.test_schema_health.SchemaMigrationTestCase
+```
+
+**Test Categories:**
+- **SchemaHealthTestCase**: Basic schema integrity checks
+- **SchemaOperationsTestCase**: Database operations testing
+- **SchemaMigrationTestCase**: Migration state verification
+- **SchemaConstraintsTestCase**: Database constraint validation
+- **SchemaIntegrationTestCase**: Full workflow integration tests
+
+#### **Custom User Model Configuration**
+
+The system uses a custom user model with proper configuration:
+
+```python
+# Settings Configuration
+AUTH_USER_MODEL = 'electra_auth.User'
+
+# Required fields for different user roles
+STUDENT_REQUIRED_FIELDS = ['email', 'full_name', 'matric_number']
+STAFF_REQUIRED_FIELDS = ['email', 'full_name', 'staff_id']
+ADMIN_REQUIRED_FIELDS = ['email', 'full_name', 'staff_id']
+```
+
+**Creating Users:**
+```bash
+# Create staff user
+python manage.py shell -c "
+from django.contrib.auth import get_user_model
+from electra_server.apps.auth.models import UserRole
+User = get_user_model()
+User.objects.create_user(
+    email='staff@electra.test',
+    full_name='Staff User',
+    password='secure_password',
+    role=UserRole.STAFF,
+    staff_id='STAFF001'
+)
+"
+
+# Create student user
+python manage.py shell -c "
+from django.contrib.auth import get_user_model
+from electra_server.apps.auth.models import UserRole
+User = get_user_model()
+User.objects.create_user(
+    email='student@electra.test',
+    full_name='Student User',
+    password='secure_password',
+    role=UserRole.STUDENT,
+    matric_number='STU001'
+)
+"
+```
+
+#### **Migration Troubleshooting**
+
+**Common Issues and Solutions:**
+
+**❌ `no such table: electra_auth_user`**
+```bash
+# Solution: Run migration fixer
+python scripts/fix_migrations_windows.py --verbose
+
+# Or manually:
+python manage.py makemigrations
+python manage.py migrate
+python manage.py verify_schema
+```
+
+**❌ Missing migrations directories**
+```bash
+# Create missing directories
+for app in admin analytics audit auth ballots elections health notifications votes; do
+    mkdir -p electra_server/apps/$app/migrations
+    touch electra_server/apps/$app/migrations/__init__.py
+done
+```
+
+**❌ Superuser creation fails**
+```bash
+# Superusers require staff_id - create via Django shell:
+python manage.py shell -c "
+from django.contrib.auth import get_user_model
+from electra_server.apps.auth.models import UserRole
+User = get_user_model()
+User.objects.create_superuser(
+    email='admin@electra.test',
+    password='admin_password',
+    staff_id='ADMIN001',
+    full_name='System Administrator'
+)
+"
+```
+
+**❌ Database connection issues**
+```bash
+# Check PostgreSQL status
+sudo systemctl status postgresql
+
+# Verify database exists
+psql -h localhost -U postgres -l
+
+# Create database if missing
+psql -h localhost -U postgres -c "CREATE DATABASE electra_dev;"
+```
+
+**❌ Schema inconsistencies**
+```bash
+# Reset migrations (DANGER: destroys data)
+python manage.py migrate --fake-initial
+python manage.py migrate
+
+# Or safer approach:
+python manage.py sqlmigrate app_name migration_name
+# Review SQL before applying
+```
+
+#### **Production Migration Checklist**
+
+Before deploying to production:
+
+- [ ] ✅ Run `python manage.py verify_schema` with exit code 0
+- [ ] ✅ All tests pass: `python manage.py test`
+- [ ] ✅ Migration fixer completes successfully
+- [ ] ✅ Custom user model creates users correctly
+- [ ] ✅ Critical tables exist and are accessible
+- [ ] ✅ Database constraints are properly enforced
+- [ ] ✅ Schema matches model definitions exactly
+
+**Automated Verification:**
+```bash
+# Complete production readiness check
+.\scripts\verify_backend.ps1 -Verbose
+
+# Expected output: "ALL VERIFICATION CHECKS PASSED!"
+```
+
 ## Features
 
 🗳️ **Vote Casting System**
