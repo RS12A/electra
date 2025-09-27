@@ -20,8 +20,8 @@ if not env('DATABASE_URL', default=''):
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'electra_dev',
-            'USER': 'postgres',
-            'PASSWORD': 'postgres',
+            'USER': env('POSTGRES_USER', default='postgres'),
+            'PASSWORD': env('POSTGRES_PASSWORD', default='postgres'),
             'HOST': 'localhost',
             'PORT': '5432',
             'CONN_MAX_AGE': 60,
