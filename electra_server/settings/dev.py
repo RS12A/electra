@@ -1,5 +1,6 @@
-# Development settings for electra_server project.
-# All database operations must use PostgreSQL - SQLite is prohibited.
+"""
+Development settings for electra_server project.
+All database operations must use PostgreSQL - SQLite is prohibited.
 """
 
 from .base import *
