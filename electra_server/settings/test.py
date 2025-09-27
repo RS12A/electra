@@ -1,5 +1,6 @@
 """
 Test settings for electra_server project.
+All tests must use PostgreSQL - SQLite is completely prohibited.
 """
 import os
 
@@ -14,23 +15,36 @@ DEBUG = True
 # Test-specific allowed hosts
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*', 'testserver']
 
-# Use in-memory SQLite database for tests
+# Test database - PostgreSQL ONLY
+# SQLite usage is prohibited even for testing
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'electra_test',
+        'USER': env('TEST_DB_USER', default='postgres'),
+        'PASSWORD': env('TEST_DB_PASSWORD', default=''),
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'TEST': {
+            'NAME': 'test_electra_test',
+        },
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
     }
 }
 
-# Disable migrations for faster tests
-class DisableMigrations:
-    def __contains__(self, item):
-        return True
-    
-    def __getitem__(self, item):
-        return None
+# Override with custom test database URL if provided
+test_database_url = env('TEST_DATABASE_URL', default='')
+if test_database_url:
+    DATABASES = {'default': env.db('TEST_DATABASE_URL')}
 
-MIGRATION_MODULES = DisableMigrations()
+# Ensure we're using PostgreSQL for tests
+if DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
+    raise ValueError(
+        'Tests must use PostgreSQL database. SQLite is prohibited. '
+        'Please set TEST_DATABASE_URL with a PostgreSQL connection string.'
+    )
 
 # Email backend for testing (in-memory)
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
@@ -60,13 +74,26 @@ LOGGING = {
     },
 }
 
-# Test cache (use local memory)
+# Test Redis cache - use separate Redis database for testing
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'test-cache',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': env('REDIS_URL', default='redis://localhost:6379/1'),  # Use database 1 for tests
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 10,
+                'retry_on_timeout': True,
+            },
+            'IGNORE_EXCEPTIONS': True,
+        },
+        'KEY_PREFIX': 'electra_test',
     }
 }
+
+# Use Redis-backed sessions for testing
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
 
 # Disable password hashers for faster tests
 PASSWORD_HASHERS = [

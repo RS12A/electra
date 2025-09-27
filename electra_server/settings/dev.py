@@ -1,5 +1,6 @@
 """
 Development settings for electra_server project.
+All database operations must use PostgreSQL - SQLite is prohibited.
 """
 
 from .base import *
@@ -10,13 +11,23 @@ DEBUG = True
 # Development-specific allowed hosts
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
 
-# Development database (can use SQLite for quick setup)
-# Override with PostgreSQL via DATABASE_URL in .env
+# Development database - PostgreSQL ONLY
+# SQLite usage is completely prohibited, even in development
+# Override database settings with DATABASE_URL in .env for custom configuration
 if not env('DATABASE_URL', default=''):
+    # Default development PostgreSQL database
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'electra_dev',
+            'USER': env('POSTGRES_USER', default='postgres'),
+            'PASSWORD': env('POSTGRES_PASSWORD', default='postgres'),
+            'HOST': 'localhost',
+            'PORT': '5432',
+            'CONN_MAX_AGE': 60,
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
         }
     }
 
@@ -50,10 +61,5 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# Development cache (use local memory)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-    }
-}
+# Development Redis configuration - use default Redis cache from base
+# Ensure Redis is always used, never local memory cache
