@@ -230,7 +230,7 @@ except Exception as e:
 "@
         
         Set-Location $ProjectRoot
-        $redisTest | & $pythonPath -c "exec(open('stdin').read())"
+        $redisTest | & $pythonPath -c "exec(__import__('sys').stdin.read())"
         $redisConnected = $LASTEXITCODE -eq 0
         
         Write-TestResult "Redis connectivity" $redisConnected
