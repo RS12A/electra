@@ -21,8 +21,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'electra_test',
-        'USER': 'postgres', 
-        'PASSWORD': 'postgres',
+        'USER': env('TEST_DB_USER', default='postgres'),
+        'PASSWORD': env('TEST_DB_PASSWORD', default=''),
         'HOST': 'localhost',
         'PORT': '5432',
         'TEST': {
