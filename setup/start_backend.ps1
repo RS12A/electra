@@ -14,7 +14,7 @@ param(
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $VenvPath = Join-Path $ProjectRoot "venv"
-$ActivateScript = Join-Path $VenvPath "Scripts\Activate.ps1"
+$ActivateScript = Join-Path $VenvPath "Scripts" "Activate.ps1"
 
 function Show-Help {
     @"
