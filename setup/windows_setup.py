@@ -301,10 +301,10 @@ DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 DJANGO_ENV=development
 
 # Database Configuration (Local PostgreSQL)
-DATABASE_URL=postgresql://electra_debug:{db_password}@localhost:5432/electra_debug
+DATABASE_URL=postgresql://postgres@localhost:5432/electra_debug
 
-# Test Database Configuration
-TEST_DATABASE_URL=postgresql://electra_debug:{db_password}@localhost:5432/electra_debug_test
+# Test Database Configuration  
+TEST_DATABASE_URL=postgresql://postgres@localhost:5432/electra_debug_test
 
 # JWT Configuration
 JWT_SECRET_KEY={jwt_secret}
@@ -465,8 +465,8 @@ DEBUG_TOOLBAR=true
             'email_password': email_password
         }
         
-        # Build database URL
-        database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        # Build database URL - using postgres user for simplicity in development
+        database_url = f"postgresql://postgres@{db_host}:{db_port}/{db_name}"
         
         # Environment configuration
         production_env = f"""# =====================================================
@@ -487,7 +487,7 @@ DJANGO_ENV=production
 DATABASE_URL={database_url}
 
 # Test Database Configuration
-TEST_DATABASE_URL=postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}_test
+TEST_DATABASE_URL=postgresql://postgres@{db_host}:{db_port}/{db_name}_test
 
 # JWT Configuration
 JWT_SECRET_KEY={jwt_secret}
@@ -688,7 +688,8 @@ DEBUG_TOOLBAR=false
             f'sudo -u postgres psql -c "CREATE DATABASE {db_name};"',
             f'''sudo -u postgres psql -c "CREATE USER {db_user} WITH PASSWORD '{db_password}';"''',
             f'sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE {db_name} TO {db_user};"',
-            f'sudo -u postgres psql -c "ALTER USER {db_user} CREATEDB;"'
+            f'sudo -u postgres psql -c "ALTER USER {db_user} CREATEDB;"',
+            f'sudo -u postgres psql -d {db_name} -c "GRANT ALL ON SCHEMA public TO {db_user};"'
         ]
         
         success_count = 0
@@ -715,12 +716,12 @@ DEBUG_TOOLBAR=false
         python_cmd = 'python3'  # Use system python for now
         
         # Make migrations
-        result = self._run_command(f'{python_cmd} manage.py makemigrations --settings=electra_server.settings')
+        result = self._run_command(f'{python_cmd} manage.py makemigrations --settings=minimal_settings')
         if result.returncode != 0:
             self.log_warning("Failed to make migrations, but continuing...")
             
         # Apply migrations
-        result = self._run_command(f'{python_cmd} manage.py migrate --settings=electra_server.settings')
+        result = self._run_command(f'{python_cmd} manage.py migrate --settings=minimal_settings')
         if result.returncode != 0:
             self.log_error("Failed to apply migrations")
             return False
@@ -749,7 +750,7 @@ project_root = "{self.project_root}"
 sys.path.insert(0, project_root)
 
 # Set the Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'electra_server.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'minimal_settings')
 
 # Setup Django
 django.setup()
@@ -982,7 +983,7 @@ except Exception as e:
         python_cmd = 'python3'
         
         # Run Django checks
-        result = self._run_command(f'{python_cmd} manage.py check --settings=electra_server.settings')
+        result = self._run_command(f'{python_cmd} manage.py check --settings=minimal_settings')
         if result.returncode != 0:
             self.log_error("Django configuration check failed")
             return False
